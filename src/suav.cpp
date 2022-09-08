@@ -112,7 +112,7 @@ public:
     void searchStateCallback(const std_msgs::Int8::ConstPtr& msg) {
         searchState = msg->data;
         if (searchState == 5) {
-            //searchOver = true;
+            searchOver = true;
         }
     }
 
@@ -136,7 +136,7 @@ public:
 
     void StepTakeoff() {
         ROS_INFO("###----StepTakeoff----###");
-        double expected_height = 5.0;
+        double expected_height = 6.0;
         ROS_INFO("Expected height @ %.2lf", expected_height);
         fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_height, 0.2)){
@@ -150,7 +150,7 @@ public:
         ROS_INFO("###----StepHold----###");
         double hold_time = 20.0;
         // auto expected_point = fc.compensate_yaw_offset(MyDataFun::new_point(10.0, 8.0, 2.0), fc.yaw_offset);
-        auto expected_point = MyDataFun::new_point(-1.5, -1.5, 5.0);
+        auto expected_point = MyDataFun::new_point(-1.5, -1.5, 6.0);
         ROS_INFO("Hold %.2lf", fc.get_time_now() - hold_begin_time);
         ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
