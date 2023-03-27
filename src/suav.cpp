@@ -26,6 +26,7 @@ private:
     Point desired_point;
 
     double expected_height = 7.5;
+    double tic, toc;
 
     DataLogger dl;
     ros::Rate rate;
@@ -119,24 +120,29 @@ public:
     }
 
     void toStepTakeoff(){
+        tic = fc.get_time_now();
         task_state = TAKEOFF;
         task_begin_time = fc.get_time_now();
     }
 
     void toStepHold(){
+        tic = fc.get_time_now();
         task_state = HOLD;
         hold_begin_time = fc.get_time_now();
     }
 
     void toStepLand(){
+        tic = fc.get_time_now();
         task_state = LAND;
     }
 
     void toStepBack(){
+        tic = fc.get_time_now();
         task_state = BACK;
     }
 
     void toStepEnd() {
+        tic = fc.get_time_now();
         task_state = END;
     }
 
@@ -144,7 +150,7 @@ public:
         printf("###----StepTakeoff----###\n");
         printf("Expected height @ %.2lf\n", expected_height);
         fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
-        if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_height, 0.2)){
+        if (toc - tic >= 15.0){
             // printf("Arrive expected height @ %.2lf\n", expected_height);
             toStepHold();
             uavReadyPub.publish(std_msgs::Empty());
@@ -158,8 +164,8 @@ public:
         printf("Hold %.2lf\n", fc.get_time_now() - hold_begin_time);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
-        // fc.M210_adjust_yaw(fc.yaw_offset);
-        fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
+        fc.M210_adjust_yaw(fc.yaw_offset);
+        // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
         if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
             toStepBack();
         }
@@ -172,7 +178,8 @@ public:
         printf("Back %.2lf\n", fc.get_time_now() - hold_begin_time);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
-        fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
+        // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
+        fc.M210_position_yaw_rate_ctrl(0, 0, 2.0, 0);
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.2)){
               toStepLand();
         }
@@ -222,6 +229,7 @@ public:
 
         while (ros::ok()) {
             // std::cout << "\033c" << std::flush;
+            toc = fc.get_time_now();
             task_time = fc.get_time_now() - task_begin_time;
             printf("-----------\n");
             printf("Time: %lf\n", task_time);
@@ -231,6 +239,7 @@ public:
                                                         fc.current_euler_angle.y * RAD2DEG_COE,
                                                         fc.current_euler_angle.z * RAD2DEG_COE);
             printf("Search Over: %d\n", searchOver);                        
+            printf("State time: %.2lf\n", toc - tic);
             if (fc.EMERGENCY) {
                 fc.M210_hold_ctrl();
                 printf("!!!!!!!!!!!!EMERGENCY!!!!!!!!!!!!\n");
