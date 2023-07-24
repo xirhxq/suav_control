@@ -206,6 +206,7 @@ namespace MyMathFun{
 		if (deg > 180.0){
 			return deg - 360.0;
 		}
+		return deg;
 	}
 
 	double rad_round(double rad){
@@ -215,6 +216,7 @@ namespace MyMathFun{
 		if (rad > PI){
 			return rad - 2 * PI;
 		}
+		return rad;
 	}
 
 	double nearly_is(double a, double b, double tol = 0.1){
