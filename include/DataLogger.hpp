@@ -206,9 +206,9 @@ public:
                 }
             }
 
-            file_ << getCurrentTimestamp(", ");
+            file_ << getCurrentTimestamp(",");
             for (size_t i = 0; i < values_.size(); ++i) {
-                file_ << ", " << values_[i];
+                file_ << "," << values_[i];
                 valueUpdated_[i] = false;
             }
             file_ << std::endl;
@@ -384,9 +384,9 @@ private:
     }
 
     void writeHeader() {
-        file_ << "Year, Month, Day, Hour, Minute, Second, Millisecond";
+        file_ << "Year,Month,Day,Hour,Minute,Second,Millisecond";
         for (const auto &name: variableNames_) {
-            file_ << ", " << name;
+            file_ << "," << name;
         }
         file_ << std::endl;
     }
