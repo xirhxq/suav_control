@@ -13,7 +13,6 @@ class TASK {
 private:
 
     FLIGHT_CONTROL fc;
-    ros::NodeHandle nh;
 
     typedef enum { TAKEOFF, ASCEND, SEARCH, TRACK, HOLD, BACK, LAND, END } ControlState;
     ControlState task_state;
@@ -31,9 +30,8 @@ private:
 
 public:
 
-    TASK(string name, bool ON_GROUND, string start_state="takeoff"): 
-        fc(name), dl("search.csv"), rate(50){
-
+    TASK(string name, bool ON_GROUND, string start_state, ros::NodeHandle nh_): 
+        fc(name, nh_), dl("search.csv"), rate(50){
 
         for (int i = 0; i < 100; i++) {
             ros::spinOnce();
@@ -60,10 +58,6 @@ public:
             ROS_INFO("%s", MyDataFun::output_str(a).c_str());
         }
 
-        if (!load_search_tra(name)) {
-            ROS_ERROR("Unable to load search trajectory!");
-        }
-
         ROS_INFO("Use supersonic wave for height, now_height: %.2lf", fc.current_pos_raw.z);
         string confirm_input;
         while (confirm_input != "yes"){
@@ -71,6 +65,7 @@ public:
             cin >> confirm_input;
             if (confirm_input == "no"){
                 ROS_ERROR("Said no! Quit");
+                assert(0);
             }
         }
     
@@ -181,24 +176,6 @@ public:
         }
     }
 
-    bool load_search_tra(std::string name) {
-        std::ifstream fin(std::string(ROOT_DIR) + "/config/online_tra_" + name + ".txt");
-        if (!fin.is_open()) {
-            ROS_ERROR("Cannot open %s/config/online_tra_%s.txt", std::string(ROOT_DIR).c_str(), name.c_str());
-            return false;
-        }
-        double t, x, y, z;
-        while (fin >> t >> x >> y >> z) {
-            tracking_tra.push_back(std::make_pair(t, fc.compensate_position_offset(MyDataFun::new_point(x, y, z))));
-        }
-        fin.close();
-        ROS_INFO("Load search_tra.txt successfully");
-        for (auto tra: tracking_tra) {
-            ROS_INFO("Time: %.2lf Position: %s", tra.first, MyDataFun::output_str(tra.second).c_str());
-        }
-        return true;
-    }
-
     void spin(){
 
         while (ros::ok()) {
@@ -241,6 +218,7 @@ public:
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "suav", ros::init_options::AnonymousName);
+    ros::NodeHandle nh;
 
     if (argc <= 2) {
         ROS_ERROR("Required more than 2 parameters, quitting...");
@@ -276,7 +254,7 @@ int main(int argc, char** argv) {
     }
 
 
-    TASK t(uav_name, ON_GROUND, start_state);
+    TASK t(uav_name, ON_GROUND, start_state, nh);
 
     t.spin();
     return 0;

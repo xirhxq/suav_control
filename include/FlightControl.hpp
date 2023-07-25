@@ -7,7 +7,7 @@
 #define Y_KP KP
 #define Z_KP KP
 #define YAW_KP 1.0
-#define UWB_INSTEAD_VO
+// #define UWB_INSTEAD_VO
 //#define GPS_HEIGHT
 
 class FLIGHT_CONTROL {
@@ -18,6 +18,15 @@ private:
     uint8_t flight_status = 255;
     uint8_t display_mode = 255;
     std::string cmd;
+
+    ros::Subscriber attitudeSub;
+    ros::Subscriber gimbal_sub;
+    ros::Subscriber height_sub;
+    ros::Subscriber vo_pos_sub;
+    ros::Subscriber range_pos_sub;
+    ros::Subscriber flightStatusSub;
+    ros::Subscriber displayModeSub;
+    ros::Subscriber cmd_sub;
 
 public:
 
@@ -34,37 +43,29 @@ public:
     bool EMERGENCY = false;
 
 
-    FLIGHT_CONTROL(std::string uav_name) {
-        ros::Subscriber attitudeSub =
-            fc_nh.subscribe(uav_name + "/dji_osdk_ros/attitude", 10, &FLIGHT_CONTROL::attitude_callback, this);
-        ros::Subscriber gimbal_sub =
-            fc_nh.subscribe(uav_name + "/dji_osdk_ros/gimbal_angle", 10, &FLIGHT_CONTROL::gimbal_callback, this);
-        ros::Subscriber height_sub =
-            fc_nh.subscribe(uav_name + "/dji_osdk_ros/height_above_takeoff", 10, &FLIGHT_CONTROL::height_callback, this);
-        ros::Subscriber vo_pos_sub =
-            fc_nh.subscribe(uav_name + "/dji_osdk_ros/vo_position", 10, &FLIGHT_CONTROL::vo_pos_callback, this);
-        ros::Subscriber range_pos_sub = 
-            fc_nh.subscribe(uav_name + "/filter/odom", 10, &FLIGHT_CONTROL::range_pos_callback, this);
-        ros::Subscriber flightStatusSub =
-                fc_nh.subscribe(uav_name + "/dji_osdk_ros/flight_status", 10, &FLIGHT_CONTROL::flight_status_callback, this);
-        ros::Subscriber displayModeSub =
-                fc_nh.subscribe(uav_name + "/dji_osdk_ros/display_mode", 10, &FLIGHT_CONTROL::display_mode_callback, this);
-        ros::Subscriber cmd_sub = 
-                fc_nh.subscribe(uav_name + "/commander_cmd", 10, &FLIGHT_CONTROL::cmd_callback, this);
+    FLIGHT_CONTROL(std::string uav_name, ros::NodeHandle nh_): fc_nh(nh_){
+        attitudeSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/attitude", 10, &FLIGHT_CONTROL::attitude_callback, this);
+        gimbal_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/gimbal_angle", 10, &FLIGHT_CONTROL::gimbal_callback, this);
+        height_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/height_above_takeoff", 10, &FLIGHT_CONTROL::height_callback, this);
+        vo_pos_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/vo_position", 10, &FLIGHT_CONTROL::vo_pos_callback, this);
+        range_pos_sub = fc_nh.subscribe(uav_name + "/filter/odom", 10, &FLIGHT_CONTROL::range_pos_callback, this);
+        flightStatusSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/flight_status", 10, &FLIGHT_CONTROL::flight_status_callback, this);
+        displayModeSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/display_mode", 10, &FLIGHT_CONTROL::display_mode_callback, this);
+        cmd_sub = fc_nh.subscribe(uav_name + "/commander_cmd", 10, &FLIGHT_CONTROL::cmd_callback, this);
         gimbal_angle_cmd_pub =
-            fc_nh.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal_angle_cmd", 10);
+            nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal_angle_cmd", 10);
         gimbal_speed_cmd_pub =
-            fc_nh.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal_speed_cmd", 10);
-        ros::Subscriber local_pos_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/local_position", 10, &FLIGHT_CONTROL::local_pos_callback, this);
+            nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal_speed_cmd", 10);
+        ros::Subscriber local_pos_sub = nh_.subscribe(uav_name + "/dji_osdk_ros/local_position", 10, &FLIGHT_CONTROL::local_pos_callback, this);
 
-        ctrl_cmd_pub = fc_nh.advertise<sensor_msgs::Joy>(
+        ctrl_cmd_pub = nh_.advertise<sensor_msgs::Joy>(
             uav_name + "/dji_osdk_ros/flight_control_setpoint_generic", 10);
         sdk_ctrl_authority_service =
-            fc_nh.serviceClient<dji_osdk_ros::SDKControlAuthority>(
+            nh_.serviceClient<dji_osdk_ros::SDKControlAuthority>(
                 uav_name + "/dji_osdk_ros/sdk_control_authority");
-        drone_task_service = fc_nh.serviceClient<dji_osdk_ros::DroneTaskControl>(
+        drone_task_service = nh_.serviceClient<dji_osdk_ros::DroneTaskControl>(
             uav_name + "/dji_osdk_ros/drone_task_control");
-        set_local_pos_reference = fc_nh.serviceClient<dji_osdk_ros::SetLocalPosRef> (uav_name + "/dji_osdk_ros/set_local_pos_ref");
+        set_local_pos_reference = nh_.serviceClient<dji_osdk_ros::SetLocalPosRef> (uav_name + "/dji_osdk_ros/set_local_pos_ref");
 
     }
 
@@ -94,6 +95,7 @@ public:
         current_height = *msg;
     #ifndef GPS_HEIGHT
         current_pos_raw.z = current_height.data;
+        // ROS_INFO("Height: %.2lf\n", current_height.data);
     #endif
     }
 
