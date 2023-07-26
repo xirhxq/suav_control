@@ -6,8 +6,8 @@
 #define X_KP KP
 #define Y_KP KP
 #define Z_KP KP
-#define YAW_KP 1.0
-// #define UWB_INSTEAD_VO
+#define YAW_KP 1.0 
+#define UWB_INSTEAD_VO
 //#define GPS_HEIGHT
 
 class FLIGHT_CONTROL {
@@ -48,14 +48,14 @@ public:
         gimbal_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/gimbal_angle", 10, &FLIGHT_CONTROL::gimbal_callback, this);
         height_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/height_above_takeoff", 10, &FLIGHT_CONTROL::height_callback, this);
         vo_pos_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/vo_position", 10, &FLIGHT_CONTROL::vo_pos_callback, this);
-        range_pos_sub = fc_nh.subscribe(uav_name + "/filter/odom", 10, &FLIGHT_CONTROL::range_pos_callback, this);
+        range_pos_sub = fc_nh.subscribe(uav_name + "/uwb/filter/odom", 10, &FLIGHT_CONTROL::range_pos_callback, this);
         flightStatusSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/flight_status", 10, &FLIGHT_CONTROL::flight_status_callback, this);
         displayModeSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/display_mode", 10, &FLIGHT_CONTROL::display_mode_callback, this);
-        cmd_sub = fc_nh.subscribe(uav_name + "/commander_cmd", 10, &FLIGHT_CONTROL::cmd_callback, this);
+        cmd_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/commander_cmd", 10, &FLIGHT_CONTROL::cmd_callback, this);
         gimbal_angle_cmd_pub =
-            nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal_angle_cmd", 10);
+            nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal/gimbal_angle_cmd", 10);
         gimbal_speed_cmd_pub =
-            nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal_speed_cmd", 10);
+            nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal/gimbal_speed_cmd", 10);
         ros::Subscriber local_pos_sub = nh_.subscribe(uav_name + "/dji_osdk_ros/local_position", 10, &FLIGHT_CONTROL::local_pos_callback, this);
 
         ctrl_cmd_pub = nh_.advertise<sensor_msgs::Joy>(
