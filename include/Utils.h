@@ -29,6 +29,7 @@
 #include "std_msgs/UInt8.h"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_msgs/Int8MultiArray.h"
+#include "std_msgs/Empty.h"
 #include "sensor_msgs/Imu.h"
 #include "sensor_msgs/NavSatFix.h"
 

@@ -28,10 +28,18 @@ private:
     DataLogger dl;
     ros::Rate rate;
 
+    ros::Publisher uavReadyPub;
+    ros::Subscriber searchOverSub;
+    bool searchOver;
+
 public:
 
     TASK(string name, bool ON_GROUND, string start_state, ros::NodeHandle nh_): 
         fc(name, nh_), dl("search.csv"), rate(50){
+        
+        uavReadyPub = nh_.advertise<std_msgs::Empty>(name + "/uavReady", 10);
+        searchOverSub = nh_.subscribe(name + "/pod/searchOver", 10, &TASK::searchOverCallback, this);
+        searchOver = false;
 
         for (int i = 0; i < 100; i++) {
             ros::spinOnce();
@@ -106,6 +114,10 @@ public:
 
     }
 
+    void searchOverCallback(const std_msgs::Empty::ConstPtr& msg) {
+        searchOver = true;
+    }
+
     void toStepTakeoff(){
         task_state = TAKEOFF;
         task_begin_time = fc.get_time_now();
@@ -132,6 +144,7 @@ public:
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_height, 0.2)){
             // ROS_INFO("Arrive expected height @ %.2lf", expected_height);
             toStepHold();
+            uavReadyPub.publish(std_msgs::Empty());
         }
     }
 
@@ -139,9 +152,10 @@ public:
         ROS_INFO("###----StepHold----###");
         double hold_time = 6.0;
         ROS_INFO("Hold %.2lf", fc.get_time_now() - hold_begin_time);
+        ROS_INFO("Search over: %s", searchOver?"YES":"NO");
         // M210_hold_ctrl(0.0);
         fc.M210_adjust_yaw(fc.yaw_offset);
-        if (fc.enough_time_after(hold_begin_time, hold_time)){
+        if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
             toStepLand();
         }
     }
@@ -188,7 +202,7 @@ public:
             ROS_INFO("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg", fc.current_euler_angle.x * RAD2DEG_COE,
                                                         fc.current_euler_angle.y * RAD2DEG_COE,
                                                         fc.current_euler_angle.z * RAD2DEG_COE);
-                                                        
+            ROS_INFO("Search Over: %d", searchOver);                        
             if (fc.EMERGENCY) {
                 fc.M210_hold_ctrl();
                 printf("!!!!!!!!!!!!EMERGENCY!!!!!!!!!!!!\n");
