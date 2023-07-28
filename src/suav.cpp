@@ -138,7 +138,7 @@ public:
 
     void StepTakeoff() {
         ROS_INFO("###----StepTakeoff----###");
-        double expected_height = 1.4;
+        double expected_height = 2.0;
         ROS_INFO("Expected height @ %.2lf", expected_height);
         fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_height, 0.2)){
