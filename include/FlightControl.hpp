@@ -387,8 +387,8 @@ public:
         vel.z = _pos_diff.z * Z_KP;
         double yaw_rate = _yaw_diff * YAW_KP;
         geometry_msgs::Vector3 sat;
-        sat.x = 0.4;
-        sat.y = 0.4;
+        sat.x = 0.1;
+        sat.y = 0.1;
         sat.z = 0.2;
         MyDataFun::saturate_vel(vel, sat);
         ROS_INFO("Velo cmd: %s", MyDataFun::output_str(vel).c_str());
