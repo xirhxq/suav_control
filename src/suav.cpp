@@ -34,12 +34,12 @@ private:
 
 public:
 
-    TASK(string name, bool ON_GROUND, string start_state, ros::NodeHandle nh_): 
+    TASK(string name, bool ON_GROUND, string start_state, ros::NodeHandle nh_, bool ignoreSearch): 
         fc(name, nh_), dl("search.csv"), rate(50){
         
         uavReadyPub = nh_.advertise<std_msgs::Empty>(name + "/uavReady", 10);
         searchOverSub = nh_.subscribe(name + "/pod/searchOver", 10, &TASK::searchOverCallback, this);
-        searchOver = false;
+        searchOver = ignoreSearch;
 
         for (int i = 0; i < 100; i++) {
             ros::spinOnce();
@@ -54,19 +54,10 @@ public:
         }
         MyDataFun::set_value(fc.position_offset, fc.current_pos_raw);
         ROS_INFO("Position offset: %s", MyDataFun::output_str(fc.position_offset).c_str());
-    
-        double x_dir = 1.0, y_dir = -1.0, z_height = 1.4; 
-        search_tra.push_back(fc.compensate_offset(MyDataFun::new_point(x_dir, 0.0, z_height)));
-        search_tra.push_back(fc.compensate_offset(MyDataFun::new_point(x_dir, y_dir, z_height)));
-        search_tra.push_back(fc.compensate_offset(MyDataFun::new_point(0, y_dir, z_height)));
-        search_tra.push_back(fc.compensate_offset(MyDataFun::new_point(0.0, 0.0, z_height)));
-
-        ROS_INFO("Search Trajectory:");
-        for (auto a: search_tra){
-            ROS_INFO("%s", MyDataFun::output_str(a).c_str());
-        }
 
         ROS_INFO("Use supersonic wave for height, now_height: %.2lf", fc.current_pos_raw.z);
+
+        ROS_INFO("Ignoring Search? %c\n", searchOver?'y':'n');
         string confirm_input;
         while (confirm_input != "yes"){
             ROS_INFO("Confirm: yes/no");
@@ -151,11 +142,16 @@ public:
     void StepHold() {
         ROS_INFO("###----StepHold----###");
         double hold_time = 6.0;
+        auto expected_point = MyDataFun::new_point(1.0, 0.0, 1.0);
         ROS_INFO("Hold %.2lf", fc.get_time_now() - hold_begin_time);
+        ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
-        // M210_hold_ctrl(0.0);
-        fc.M210_adjust_yaw(fc.yaw_offset);
-        if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
+        // fc.M210_adjust_yaw(fc.yaw_offset);
+        fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
+        // if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
+        //     toStepLand();
+        // }
+        if (fc.is_near(expected_point, 0.2)) {
             toStepLand();
         }
     }
@@ -267,8 +263,17 @@ int main(int argc, char** argv) {
         start_state = std::string(argv[3]);
     }
 
+    bool ignoreSearch = false;
+    ROS_INFO("argc == %d, argv[4] == %s", argc, argv[4]);
+    if (argc > 4 && std::string(argv[4]) == "ignoreSearch") {
+        ROS_WARN("IGNORING SEARCH!!!");
+        ignoreSearch = true;
+    }
 
-    TASK t(uav_name, ON_GROUND, start_state, nh);
+
+    TASK t(uav_name, ON_GROUND, start_state, nh, ignoreSearch);
+
+    
 
     t.spin();
     return 0;
