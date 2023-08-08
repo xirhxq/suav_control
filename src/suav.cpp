@@ -142,16 +142,16 @@ public:
     void StepHold() {
         ROS_INFO("###----StepHold----###");
         double hold_time = 6.0;
-        auto expected_point = MyDataFun::new_point(1.0, 0.0, 1.0);
+        auto expected_point = MyDataFun::new_point(1.0, 0.0, 2.0);
         ROS_INFO("Hold %.2lf", fc.get_time_now() - hold_begin_time);
         ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
-        // fc.M210_adjust_yaw(fc.yaw_offset);
-        fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
+        fc.M210_adjust_yaw(fc.yaw_offset);
+        // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
         // if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
         //     toStepLand();
         // }
-        if (fc.is_near(expected_point, 0.2)) {
+        if (searchOver) {
             toStepLand();
         }
     }
