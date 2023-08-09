@@ -28,9 +28,10 @@ private:
     DataLogger dl;
     ros::Rate rate;
 
-    ros::Publisher uavReadyPub;
-    ros::Subscriber searchOverSub;
+    ros::Publisher uavReadyPub, uavStatePub;
+    ros::Subscriber searchStateSub;
     bool searchOver;
+    int searchState;
 
 public:
 
@@ -38,8 +39,11 @@ public:
         fc(name, nh_), dl("search.csv"), rate(50){
         
         uavReadyPub = nh_.advertise<std_msgs::Empty>(name + "/uavReady", 10);
-        searchOverSub = nh_.subscribe(name + "/pod/searchOver", 10, &TASK::searchOverCallback, this);
         searchOver = ignoreSearch;
+        
+        uavStatePub = nh_.advertise<std_msgs::Int8>(name + "/uavState", 1);
+        searchStateSub = nh_.subscribe(name + "/pod/searchState", 1, &TASK::searchStateCallback, this);
+
 
         for (int i = 0; i < 100; i++) {
             ros::spinOnce();
@@ -105,8 +109,11 @@ public:
 
     }
 
-    void searchOverCallback(const std_msgs::Empty::ConstPtr& msg) {
-        searchOver = true;
+    void searchStateCallback(const std_msgs::Int8::ConstPtr& msg) {
+        searchState = msg->data;
+        if (searchState >= 5) {
+            searchOver = true;
+        }
     }
 
     void toStepTakeoff(){
@@ -167,6 +174,9 @@ public:
     }
 
     void ControlStateMachine() {
+        std_msgs::Int8 msg;
+        msg.data = task_state;
+        uavStatePub.publish(msg);
         switch (task_state) {
             case TAKEOFF: {
                 StepTakeoff();
