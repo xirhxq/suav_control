@@ -94,7 +94,7 @@ public:
     void height_callback(const std_msgs::Float32::ConstPtr& msg) {
         current_height = *msg;
     #ifndef GPS_HEIGHT
-        current_pos_raw.z = current_height.data;
+        // current_pos_raw.z = current_height.data;
         // ROS_INFO("Height: %.2lf\n", current_height.data);
     #endif
     }
@@ -140,10 +140,11 @@ public:
 
     void range_pos_callback(const nav_msgs::Odometry::ConstPtr& msg){
         MyDataFun::set_value(current_range_pos, msg->pose.pose.position);
-        current_range_pos = compensate_yaw_offset(current_range_pos, yaw_offset);
+        // current_range_pos = compensate_yaw_offset(current_range_pos, yaw_offset);
         #ifdef UWB_INSTEAD_VO
         current_pos_raw.x = current_range_pos.x;
         current_pos_raw.y = current_range_pos.y;
+	current_pos_raw.z = current_range_pos.z;
         #endif
     }
 

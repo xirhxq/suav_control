@@ -138,7 +138,7 @@ public:
         ROS_INFO("###----StepTakeoff----###");
         double expected_height = 2.0;
         ROS_INFO("Expected height @ %.2lf", expected_height);
-        fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
+        fc.M210_position_yaw_rate_ctrl(10.0, 8.0, expected_height, 0);
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_height, 0.2)){
             // ROS_INFO("Arrive expected height @ %.2lf", expected_height);
             toStepHold();
@@ -148,17 +148,15 @@ public:
 
     void StepHold() {
         ROS_INFO("###----StepHold----###");
-        double hold_time = 6.0;
-        auto expected_point = MyDataFun::new_point(1.0, 0.0, 2.0);
+        double hold_time = 20.0;
+        // auto expected_point = fc.compensate_yaw_offset(MyDataFun::new_point(10.0, 8.0, 2.0), fc.yaw_offset);
+        auto expected_point = MyDataFun::new_point(10.0, 8.0, 2.0);
         ROS_INFO("Hold %.2lf", fc.get_time_now() - hold_begin_time);
         ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
         // fc.M210_adjust_yaw(fc.yaw_offset);
         fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
-        // if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
-        //    toStepLand();
-        // }
-        if (searchOver) {
+        if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
             toStepLand();
         }
     }
