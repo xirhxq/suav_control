@@ -112,7 +112,7 @@ public:
     void searchStateCallback(const std_msgs::Int8::ConstPtr& msg) {
         searchState = msg->data;
         if (searchState == 5) {
-            searchOver = true;
+            //searchOver = true;
         }
     }
 
