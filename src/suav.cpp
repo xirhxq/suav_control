@@ -173,6 +173,9 @@ public:
         ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
         fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
+        if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.2)){
+              toStepLand();
+        }
     }
 
     void StepLand() {
