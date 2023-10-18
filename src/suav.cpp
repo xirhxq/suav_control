@@ -5,7 +5,6 @@
 #include "DataLogger.hpp"
 #define CAMERA_ANGLE 30
 
-using namespace dji_osdk_ros;
 using namespace std;
 
 class TASK {
@@ -15,15 +14,15 @@ private:
     FLIGHT_CONTROL fc;
 
     typedef enum { TAKEOFF, ASCEND, SEARCH, TRACK, HOLD, BACK, LAND, END } ControlState;
-    ControlState task_state;
-    vector<geometry_msgs::Vector3> search_tra;
-    size_t search_tra_cnt;
-    double hold_begin_time, ascend_begin_time;
-    double task_begin_time, task_time;
-    double track_begin_time, track_time;
-    std::vector<std::pair<double, Point>> tracking_tra;
-    size_t track_tra_cnt;
-    Point desired_point;
+    ControlState taskState;
+    vector<geometry_msgs::Vector3> searchTra;
+    size_t searchTraCnt;
+    double holdBeginTime, ascendBeginTime;
+    double taskBeginTime, taskTime;
+    double trackBeginTime, trackTime;
+    std::vector<std::pair<double, Point>> trackingTra;
+    size_t trackTraCnt;
+    Point desiredPoint;
 
     DataLogger dl;
     ros::Rate rate;
@@ -35,7 +34,7 @@ private:
 
 public:
 
-    TASK(string name, bool ON_GROUND, string start_state, ros::NodeHandle nh_, bool ignoreSearch): 
+    TASK(string name, bool ON_GROUND, string startState, ros::NodeHandle nh_, bool ignoreSearch):
         fc(name, nh_), dl("search.csv"), rate(50){
         
         uavReadyPub = nh_.advertise<std_msgs::Empty>(name + "/uavReady", 10);
@@ -50,23 +49,23 @@ public:
             rate.sleep();
         }
 
-        fc.yaw_offset = fc.current_euler_angle.z;
-        ROS_INFO("Yaw offset: %.2lf", fc.yaw_offset * RAD2DEG_COE);
+        fc.yawOffset = fc.currentEulerAngle.z;
+        ROS_INFO("Yaw offset: %.2lf", fc.yawOffset * RAD2DEG_COE);
         for (int i = 0; i < 100; i++) {
             ros::spinOnce();
             rate.sleep();
         }
-        MyDataFun::set_value(fc.position_offset, fc.current_pos_raw);
-        ROS_INFO("Position offset: %s", MyDataFun::output_str(fc.position_offset).c_str());
+        MyDataFun::setValue(fc.positionOffset, fc.currentPosRaw);
+        ROS_INFO("Position offset: %s", MyDataFun::outputStr(fc.positionOffset).c_str());
 
-        ROS_INFO("Use supersonic wave for height, now_height: %.2lf", fc.current_pos_raw.z);
+        ROS_INFO("Use supersonic wave for height, now height: %.2lf", fc.currentPosRaw.z);
 
         ROS_INFO("Ignoring Search? %c\n", searchOver?'y':'n');
-        string confirm_input;
-        while (confirm_input != "yes"){
+        string confirmInput;
+        while (confirmInput != "yes"){
             ROS_INFO("Confirm: yes/no");
-            cin >> confirm_input;
-            if (confirm_input == "no"){
+            cin >> confirmInput;
+            if (confirmInput == "no"){
                 ROS_ERROR("Said no! Quit");
                 assert(0);
             }
@@ -84,26 +83,17 @@ public:
 
         ROS_INFO("Waiting for command to take off...");
         sleep(3);
-        // while(cmd != "ok"){
-        //     ros::spinOnce();
-        //     rate.sleep();
-        // }
-        if (!ON_GROUND) {
-            fc.obtain_control();
-            fc.monitoredTakeoff();
-        }
-
 
         ROS_INFO("Start Control State Machine...");
 
         toStepTakeoff();
-        if (start_state == "takeoff") {
+        if (startState == "takeoff") {
             toStepTakeoff();
         }
-        else if (start_state == "land") {
+        else if (startState == "land") {
             toStepLand();
         }
-        else if (start_state == "hold") {
+        else if (startState == "hold") {
             toStepHold();
         }
 
@@ -117,34 +107,34 @@ public:
     }
 
     void toStepTakeoff(){
-        task_state = TAKEOFF;
-        task_begin_time = fc.get_time_now();
+        taskState = TAKEOFF;
+        taskBeginTime = fc.getTimeNow();
     }
 
     void toStepHold(){
-        task_state = HOLD;
-        hold_begin_time = fc.get_time_now();
+        taskState = HOLD;
+        holdBeginTime = fc.getTimeNow();
     }
 
     void toStepLand(){
-        task_state = LAND;
+        taskState = LAND;
     }
 
     void toStepBack(){
-        task_state = BACK;
+        taskState = BACK;
     }
 
     void toStepEnd() {
-        task_state = END;
+        taskState = END;
     }
 
     void StepTakeoff() {
         ROS_INFO("###----StepTakeoff----###");
-        double expected_height = 6.0;
-        ROS_INFO("Expected height @ %.2lf", expected_height);
-        fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
-        if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_height, 0.2)){
-            // ROS_INFO("Arrive expected height @ %.2lf", expected_height);
+        double expectedHeight = 6.0;
+        ROS_INFO("Expected height @ %.2lf", expectedHeight);
+        fc.M210PositionYawRateCtrl(0, 0, expectedHeight, 0);
+        if (MyMathFun::nearlyIs(fc.currentPosRaw.z, expectedHeight, 0.2)){
+            // ROS_INFO("Arrive expected height @ %.2lf", expectedHeight);
             toStepHold();
             uavReadyPub.publish(std_msgs::Empty());
         }
@@ -152,28 +142,28 @@ public:
 
     void StepHold() {
         ROS_INFO("###----StepHold----###");
-        double hold_time = 20.0;
-        // auto expected_point = fc.compensate_yaw_offset(MyDataFun::new_point(10.0, 8.0, 2.0), fc.yaw_offset);
-        auto expected_point = MyDataFun::new_point(-1.5, -1.5, 6.0);
-        ROS_INFO("Hold %.2lf", fc.get_time_now() - hold_begin_time);
-        ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
+        double holdTime = 20.0;
+        // auto expectedPoint = fc.compensateYawOffset(MyDataFun::newPoint(10.0, 8.0, 2.0), fc.yawOffset);
+        auto expectedPoint = MyDataFun::newPoint(-1.5, -1.5, 6.0);
+        ROS_INFO("Hold %.2lf", fc.getTimeNow() - holdBeginTime);
+        ROS_INFO("ExpectedPoint: %s", MyDataFun::outputStr(expectedPoint).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
-        // fc.M210_adjust_yaw(fc.yaw_offset);
-        fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
-        if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
+        // fc.M210AdjustYaw(fc.yawOffset);
+        fc.UAVControlToPointWithYaw(expectedPoint, fc.yawOffset);
+        if (fc.enoughTimeAfter(holdBeginTime, holdTime) && searchOver){
             toStepBack();
         }
     }
 
     void StepBack() {
         ROS_INFO("###----StepBack----###");
-        double hold_time = 5.0;
-        auto expected_point = MyDataFun::new_point(-1.5, -1.5, 2.0);
-        ROS_INFO("Back %.2lf", fc.get_time_now() - hold_begin_time);
-        ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
+        double holdTime = 5.0;
+        auto expectedPoint = MyDataFun::newPoint(-1.5, -1.5, 2.0);
+        ROS_INFO("Back %.2lf", fc.getTimeNow() - holdBeginTime);
+        ROS_INFO("ExpectedPoint: %s", MyDataFun::outputStr(expectedPoint).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
-        fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
-        if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.2)){
+        fc.UAVControlToPointWithYaw(expectedPoint, fc.yawOffset);
+        if (MyMathFun::nearlyIs(fc.currentPosRaw.z, expectedPoint.z, 0.2)){
               toStepLand();
         }
     }
@@ -181,18 +171,18 @@ public:
     void StepLand() {
         ROS_INFO("###----StepLand----###");
         ROS_INFO("Landing...");
-        fc.takeoff_land(dji_osdk_ros::DroneTaskControl::Request::TASK_LAND);
-        if (MyMathFun::nearly_is(fc.current_pos_raw.z, 0.0, 0.2)) {
+        fc.takeoffLand(dji_osdk_ros::DroneTaskControl::Request::TASK_LAND);
+        if (MyMathFun::nearlyIs(fc.currentPosRaw.z, 0.0, 0.2)) {
             toStepEnd();
         }
-        // task_state = BACK;
+        // taskState = BACK;
     }
 
     void ControlStateMachine() {
         std_msgs::Int8 msg;
-        msg.data = task_state;
+        msg.data = taskState;
         uavStatePub.publish(msg);
-        switch (task_state) {
+        switch (taskState) {
             case TAKEOFF: {
                 StepTakeoff();
                 break;
@@ -216,35 +206,34 @@ public:
     }
 
     void spin(){
-
         while (ros::ok()) {
             // std::cout << "\033c" << std::flush;
-            task_time = fc.get_time_now() - task_begin_time;
+            taskTime = fc.getTimeNow() - taskBeginTime;
             ROS_INFO("-----------");
-            ROS_INFO("Time: %lf", task_time);
-            ROS_INFO("M210(State: %d) @ %s", task_state, MyDataFun::output_str(fc.current_pos_raw).c_str());
-            // ROS_INFO("Gimbal %s", MyDataFun::output_str(current_gimbal_angle).c_str());
-            ROS_INFO("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg", fc.current_euler_angle.x * RAD2DEG_COE,
-                                                        fc.current_euler_angle.y * RAD2DEG_COE,
-                                                        fc.current_euler_angle.z * RAD2DEG_COE);
+            ROS_INFO("Time: %lf", taskTime);
+            ROS_INFO("M210(State: %d) @ %s", taskState, MyDataFun::outputStr(fc.currentPosRaw).c`_s`tr());
+            // ROS_INFO("Gimbal %s", MyDataFun::outputStr(currentGimbalAngle).c_str());
+            ROS_INFO("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg", fc.currentEulerAngle.x * RAD2DEG_COE,
+                                                        fc.currentEulerAngle.y * RAD2DEG_COE,
+                                                        fc.currentEulerAngle.z * RAD2DEG_COE);
             ROS_INFO("Search Over: %d", searchOver);                        
             if (fc.EMERGENCY) {
-                fc.M210_hold_ctrl();
+                fc.M210HoldCtrl();
                 printf("!!!!!!!!!!!!EMERGENCY!!!!!!!!!!!!\n");
             }
             else {
                 ControlStateMachine();
-                if (task_state == END) {
+                if (taskState == END) {
                     break;
                 }
             }
 
-            dl.log("taskTime", task_time);
-            dl.log("state", task_state);
-            dl.log("pos", fc.current_pos_raw);
-            dl.log("eulerAngle", fc.current_euler_angle);
-            dl.log("trackTime", track_time);
-            dl.log("desiredPoint", desired_point);
+            dl.log("taskTime", taskTime);
+            dl.log("state", taskState);
+            dl.log("pos", fc.currentPosRaw);
+            dl.log("eulerAngle", fc.currentEulerAngle);
+            dl.log("trackTime", trackTime);
+            dl.log("desiredPoint", desiredPoint);
             dl.newline();
             
             ros::spinOnce();
@@ -266,8 +255,8 @@ int main(int argc, char** argv) {
 
     bool ON_GROUND = true;
     if (argc > 2) {
-        auto on_ground = std::string(argv[2]);
-        if (on_ground == "false" || on_ground == "takeoff") {
+        auto onGround = std::string(argv[2]);
+        if (onGround == "false" || onGround == "takeoff") {
             ON_GROUND = false;
             ROS_WARN("WILL TAKE OFF!!!!");
         }
@@ -276,20 +265,20 @@ int main(int argc, char** argv) {
         }
     }
     
-	string uav_name = "none";
+	string uavName = "none";
 	if (argc > 1) {
-		uav_name = std::string(argv[1]);
+		uavName = std::string(argv[1]);
 	}
-    while (uav_name == "none"){
-        ROS_ERROR("Invalid vehicle name: %s", uav_name.c_str());
+    while (uavName == "none"){
+        ROS_ERROR("Invalid vehicle name: %s", uavName.c_str());
     }
-	ROS_INFO("Vehicle name: %s", uav_name.c_str());
+	ROS_INFO("Vehicle name: %s", uavName.c_str());
 
 
-    std::string start_state = "";
+    std::string startState = "";
     if (argc > 3) {
-        // get the start state and set the task_state
-        start_state = std::string(argv[3]);
+        // get the start state and set the taskState
+        startState = std::string(argv[3]);
     }
 
     bool ignoreSearch = false;
@@ -300,7 +289,7 @@ int main(int argc, char** argv) {
     }
 
 
-    TASK t(uav_name, ON_GROUND, start_state, nh, ignoreSearch);
+    TASK t(uavName, ON_GROUND, startState, nh, ignoreSearch);
 
     
 

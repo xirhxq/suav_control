@@ -11,35 +11,35 @@ typedef geometry_msgs::Vector3 Point;
 
 namespace MyDataFun{
     template<typename T1, typename T2>
-    void set_value(T1 &a, T2 b){
+    void setValue(T1 &a, T2 b){
         a.x = b.x;
         a.y = b.y;
         a.z = b.z;
     }
 
     template<typename T>
-    void set_value(T &a, double b[]){
+    void setValue(T &a, double b[]){
         a.x = b[0];
         a.y = b[1];
         a.z = b[2];
     }
 
     template<typename T>
-    void set_value(double a[], T &b){
+    void setValue(double a[], T &b){
         a[0] = b.x;
         a[1] = b.y;
         a[2] = b.z;
     }
 
     template<typename T>
-    void set_value(T &a, double x, double y, double z){
+    void setValue(T &a, double x, double y, double z){
         a.x = x;
         a.y = y;
         a.z = z;
     }
 
     template<typename T1, typename T2>
-    void set_value_quaternion(T1 &a, T2 b){
+    void setValueQuaternion(T1 &a, T2 b){
         a.x = b.x;
         a.y = b.y;
         a.z = b.z;
@@ -47,22 +47,22 @@ namespace MyDataFun{
     }
 
     template<typename T1, typename T2>
-    void saturate_vel(T1 &a, T2 &b){
+    void saturateVel(T1 &a, T2 &b){
         a.x = MyMathFun::LimitValue(a.x, b.x);
         a.y = MyMathFun::LimitValue(a.y, b.y);
         a.z = MyMathFun::LimitValue(a.z, b.z);
     }
 
-    Point new_point(double x, double y, double z){
+    Point newPoint(double x, double y, double z){
         Point res;
         double p[3] = {x, y, z};
-        set_value(res, p);
+        setValue(res, p);
         return res;
     }
 
-    Point new_point(double p[]){
+    Point newPoint(double p[]){
         Point res;
-        set_value(res, p);
+        setValue(res, p);
         return res;
     }
 
@@ -77,12 +77,12 @@ namespace MyDataFun{
     }
 
     template<typename T1, typename T2>
-    double dis_2d(T1 a, T2 b){
+    double dis2d(T1 a, T2 b){
         return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
     }
 
     template<typename T1, typename T2>
-    double angle_2d(T1 from, T2 to){
+    double angle2d(T1 from, T2 to){
         return atan2(to.y - from.y, to.x - from.x);
     }
 
@@ -128,7 +128,7 @@ namespace MyDataFun{
     }
 
     template<typename T>
-    std::string output_str(T a){
+    std::string outputStr(T a){
         char s[50];
         sprintf(s, "(%.2lf, %.2lf, %.2lf)", a.x, a.y, a.z);
         std::string res(s);
@@ -136,7 +136,7 @@ namespace MyDataFun{
     }
 
     template<typename T>
-    void put_discrete_points(std::vector<T> &v, T b, int n){
+    void putDiscretePoints(std::vector<T> &v, T b, int n){
         assert(!v.empty());
         T a = v[v.size() - 1];
         for (int i = 1; i <= n; i++){
@@ -145,17 +145,17 @@ namespace MyDataFun{
     }
 
     template<typename T>
-    void output_vector(std::vector<T> & v){
+    void output$1ector(std::vector<T> & v){
         for (auto i: v){
-            printf("%s\n", output_str(i).c_str());
+            printf("%s\n", output$1tr(i).c_str());
         }
     }
 
-    uint8_t encode_uint8(uint32_t x, int n){
+    uint8_t encodeUint8(uint32_t x, int n){
         return (x >> (8 * n)) & ((1 << 8) - 1);
     }
 
-    uint32_t decode_uint8(std::vector<uint8_t> &v, int pos){
+    uint32_t decodeUint8(std::vector<uint8_t> &v, int pos){
         return (v[pos] << 16) + (v[pos + 1] << 8) + v[pos + 2];
     }
 }
