@@ -53,11 +53,11 @@ namespace MyMathFun{
 		}
 	};
 
-	struct Average_Filter{
+	struct AverageFilter{
 		std::vector<double> v;
 		size_t size;
 
-		Average_Filter(size_t sz_){
+		AverageFilter(size_t sz_){
 			size = sz_;
 			while (!v.empty()) v.erase(v.begin());
 		}

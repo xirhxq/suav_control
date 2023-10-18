@@ -1,7 +1,7 @@
 #include "Utils.h"
 #include "MyDataFun.h"
 #include "MyMathFun.h"
-#include "FlightControl.hpp"
+#include "FlightControlXY.hpp"
 #include "DataLogger.hpp"
 #define CAMERA_ANGLE 30
 
@@ -49,16 +49,16 @@ public:
             rate.sleep();
         }
 
-        fc.yawOffset = fc.currentEulerAngle.z;
+        fc.yawOffset = fc.currentEulerDeg.z;
         ROS_INFO("Yaw offset: %.2lf", fc.yawOffset * RAD2DEG_COE);
         for (int i = 0; i < 100; i++) {
             ros::spinOnce();
             rate.sleep();
         }
-        MyDataFun::setValue(fc.positionOffset, fc.currentPosRaw);
+        MyDataFun::setValue(fc.positionOffset, fc.currentPos);
         ROS_INFO("Position offset: %s", MyDataFun::outputStr(fc.positionOffset).c_str());
 
-        ROS_INFO("Use supersonic wave for height, now height: %.2lf", fc.currentPosRaw.z);
+        ROS_INFO("Use supersonic wave for height, now height: %.2lf", fc.currentPos.z);
 
         ROS_INFO("Ignoring Search? %c\n", searchOver?'y':'n');
         string confirmInput;
@@ -132,8 +132,8 @@ public:
         ROS_INFO("###----StepTakeoff----###");
         double expectedHeight = 6.0;
         ROS_INFO("Expected height @ %.2lf", expectedHeight);
-        fc.M210PositionYawRateCtrl(0, 0, expectedHeight, 0);
-        if (MyMathFun::nearlyIs(fc.currentPosRaw.z, expectedHeight, 0.2)){
+        fc.uavPositionYawCtrl(0, 0, expectedHeight, 0);
+        if (MyMathFun::nearlyIs(fc.currentPos.z, expectedHeight, 0.2)){
             // ROS_INFO("Arrive expected height @ %.2lf", expectedHeight);
             toStepHold();
             uavReadyPub.publish(std_msgs::Empty());
@@ -149,7 +149,7 @@ public:
         ROS_INFO("ExpectedPoint: %s", MyDataFun::outputStr(expectedPoint).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
         // fc.M210AdjustYaw(fc.yawOffset);
-        fc.UAVControlToPointWithYaw(expectedPoint, fc.yawOffset);
+        fc.uavControlToPointWithYaw(expectedPoint, fc.yawOffset);
         if (fc.enoughTimeAfter(holdBeginTime, holdTime) && searchOver){
             toStepBack();
         }
@@ -162,8 +162,8 @@ public:
         ROS_INFO("Back %.2lf", fc.getTimeNow() - holdBeginTime);
         ROS_INFO("ExpectedPoint: %s", MyDataFun::outputStr(expectedPoint).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
-        fc.UAVControlToPointWithYaw(expectedPoint, fc.yawOffset);
-        if (MyMathFun::nearlyIs(fc.currentPosRaw.z, expectedPoint.z, 0.2)){
+        fc.uavControlToPointWithYaw(expectedPoint, fc.yawOffset);
+        if (MyMathFun::nearlyIs(fc.currentPos.z, expectedPoint.z, 0.2)){
               toStepLand();
         }
     }
@@ -171,8 +171,8 @@ public:
     void StepLand() {
         ROS_INFO("###----StepLand----###");
         ROS_INFO("Landing...");
-        fc.takeoffLand(dji_osdk_ros::DroneTaskControl::Request::TASK_LAND);
-        if (MyMathFun::nearlyIs(fc.currentPosRaw.z, 0.0, 0.2)) {
+        fc.uavLand();
+        if (MyMathFun::nearlyIs(fc.currentPos.z, 0.0, 0.2)) {
             toStepEnd();
         }
         // taskState = BACK;
@@ -211,14 +211,12 @@ public:
             taskTime = fc.getTimeNow() - taskBeginTime;
             ROS_INFO("-----------");
             ROS_INFO("Time: %lf", taskTime);
-            ROS_INFO("M210(State: %d) @ %s", taskState, MyDataFun::outputStr(fc.currentPosRaw).c`_s`tr());
+            ROS_INFO("M210(State: %d) @ %s", taskState, MyDataFun::outputStr(fc.currentPos).c_str());
             // ROS_INFO("Gimbal %s", MyDataFun::outputStr(currentGimbalAngle).c_str());
-            ROS_INFO("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg", fc.currentEulerAngle.x * RAD2DEG_COE,
-                                                        fc.currentEulerAngle.y * RAD2DEG_COE,
-                                                        fc.currentEulerAngle.z * RAD2DEG_COE);
+            ROS_INFO("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg", fc.currentEulerDeg.x, fc.currentEulerDeg.y, fc.currentEulerDeg.z);
             ROS_INFO("Search Over: %d", searchOver);                        
             if (fc.EMERGENCY) {
-                fc.M210HoldCtrl();
+                fc.uavHoldCtrl();
                 printf("!!!!!!!!!!!!EMERGENCY!!!!!!!!!!!!\n");
             }
             else {
@@ -230,8 +228,8 @@ public:
 
             dl.log("taskTime", taskTime);
             dl.log("state", taskState);
-            dl.log("pos", fc.currentPosRaw);
-            dl.log("eulerAngle", fc.currentEulerAngle);
+            dl.log("pos", fc.currentPos);
+            dl.log("eulerAngle", fc.currentEulerDeg);
             dl.log("trackTime", trackTime);
             dl.log("desiredPoint", desiredPoint);
             dl.newline();

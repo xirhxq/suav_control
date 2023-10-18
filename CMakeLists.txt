@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.0.2)
 project(suav_control)
 
 find_package(catkin REQUIRED COMPONENTS
-  dji_osdk_ros
   roscpp
   rospy
   std_msgs
@@ -32,8 +31,6 @@ foreach (src ${SRCS})
 
     target_link_libraries(${name}
         ${catkin_LIBRARIES}
-        djiosdk-core.a
-        dji-linker.a
     )
 
 endforeach()

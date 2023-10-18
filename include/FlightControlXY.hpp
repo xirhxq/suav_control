@@ -45,13 +45,13 @@ public:
     }
 private:
     std_msgs::Float32MultiArray cmd;
-}
+};
 
 class FLIGHT_CONTROL {
 private:
     ros::NodeHandle nh;
     ros::Publisher ctrlCmdPub;
-    ros::Subscriber flightDataSub;
+    ros::Subscriber flightDataSub, locSub;
     std::string cmd;
     XY_CMD xyCmd;
 
@@ -59,12 +59,14 @@ public:
     double currentHorMode, currentVerMode, currentYawMode;
 
     // RPY
-    geometry_msgs::Vector3 currentEulerRad；
+    geometry_msgs::Vector3 currentEulerRad;
 
     // RPY
     geometry_msgs::Vector3 currentEulerDeg;
 
     geometry_msgs::Vector3 currentPos;
+
+    geometry_msgs::Vector3 currentLocPos;
 
     geometry_msgs::Vector3 currentVel;
 
@@ -112,9 +114,11 @@ public:
         currentPos.y = msgs.data[11];
         currentPos.z = msgs.data[12];
 
-        MyDataFun::setValue(currentEulerRad, msgs.data + 13);
+        currentEulerRad.x = msgs.data[13];
+        currentEulerRad.y = msgs.data[14];
+        currentEulerRad.z = msgs.data[15];
 
-        MyDataFun::setValue(currentEulerDeg, MyMathFun::scale(currentEulerRad, RAD2DEG_COE));
+        MyDataFun::setValue(currentEulerDeg, MyDataFun::scale(currentEulerRad, RAD2DEG_COE));
 
         currentThrottle = msgs.data[16];
 
@@ -165,12 +169,12 @@ public:
 
     template<typename T>
     bool isNear(T a, double r){
-        return MyDataFun::dis(a, currentPosRaw) <= r;
+        return MyDataFun::dis(a, currentPos) <= r;
     }
 
     template<typename T>
     bool isNear2d(T a, double r){
-        return MyDataFun::dis_2d(a, currentPosRaw) <= r;
+        return MyDataFun::dis2d(a, currentPos) <= r;
     }
 
     void uavHoldCtrl() {
@@ -179,6 +183,10 @@ public:
 
     void uavAdjustYaw(double _yaw) {
         ctrlCmdPub.publish(xyCmd.getVeloCmd(0, 0, _yaw, 0));
+    }
+
+    void uavLand() {
+        ctrlCmdPub.publish(xyCmd.getLandCmd());
     }
 
     void uavVelocityYawCtrl(double _vx, double _vy, double _vz, double _yaw) {
@@ -201,22 +209,21 @@ public:
         sat.z = 0.2;
         MyDataFun::saturateVel(vel, sat);
         ROS_INFO("Velo cmd: %s", MyDataFun::outputStr(vel).c_str());
-        M210VelocityYawCtrl(vel.x, vel.y, vel.z, yaw);
+        uavVelocityYawCtrl(vel.x, vel.y, vel.z, yaw);
     }
 
     template<typename T>
     void uavControlToPointFacingIt(T ctrlCmd){
         double yaw = MyDataFun::angle2d(currentPos, ctrlCmd);
         yaw = MyMathFun::radRound(yaw);
-        if (MyDataFun::dis2d(ctrlCmd, currentPos) <= 1) yawDiff = 0;
-        ROS_INFO("Yaw diff: %.2lf", yawDiff);
-        uavVelocityYawCtrl(MyDataFun::minus(ctrlCmd, currentPosRaw), yawDiff);
+        if (MyDataFun::dis2d(ctrlCmd, currentPos) <= 1) yaw = 0;
+        uavVelocityYawCtrl(MyDataFun::minus(ctrlCmd, currentPos), yaw);
     }
 
     template<typename T>
     void uavControlToPointWithYaw(T ctrlCmd, double yaw){
         yaw = MyMathFun::radRound(yaw);
-        uavVelocityYawCtrl(MyDataFun::minus(ctrlCmd, currentPosRaw), yaw);
+        uavVelocityYawCtrl(MyDataFun::minus(ctrlCmd, currentPos), yaw);
     }
 
     double getTimeNow(){
