@@ -20,7 +20,8 @@ private:
     } ControlState;
     ControlState taskState;
 
-    Point holdPoint1;
+    Point holdPoint1, backPoint1;
+    
     vector<Point> holdPoints;
     vector<double> holdYawsDeg;
     vector<double> holdTimes;
@@ -56,7 +57,7 @@ public:
         }
 
         fc.yawOffsetDeg = fc.currentRPYDeg.z;
-        printf("Yaw offset / Deg: %.2lf", fc.yawOffsetDeg);
+        printf("Yaw offset / Deg: %.2lf\n", fc.yawOffsetDeg);
 
         holdYawsDeg = {
                 degreeRound0To360(fc.yawOffsetDeg + 0),
@@ -71,24 +72,25 @@ public:
         }
 
         fc.setPositionOffset();
-        printf("Position offset ENU / m: %s", outputStr(fc.positionOffset).c_str());
+        printf("Position offset ENU / m: %s\n", outputStr(fc.positionOffset).c_str());
 
-        holdPoint1 = fc.compensatePositionOffset(newPoint(0, 3, 100.0));
+        holdPoint1 = fc.compensatePositionOffset(newPoint(0, 3, 1.0));
+        backPoint1 = fc.compensatePositionOffset(newPoint(0, 0, 0.5));
+        
         holdPoints = {holdPoint1, holdPoint1, holdPoint1, holdPoint1};
         holdTimes = {10, 10, 10, 10};
         
         printf("Hold Trajectory: \n");
         for (int i = 0; i < holdPoints.size(); i++) {
-            printf("[%d]: %.2lf seconds @ %s with yaw %.2lf deg", i + 1, holdTimes[i], outputStr(holdPoints[i]).c_str(), holdYawsDeg[i]);
+            printf("[%d]: %.2lf seconds @ %s with yaw %.2lf deg\n", i + 1, holdTimes[i], outputStr(holdPoints[i]).c_str(), holdYawsDeg[i]);
         }
-        printf("\n");
 
         printf("Ignoring Search? %c\n", searchOver?'y':'n');
         printf("Start state input: %s\n", startState.c_str());
 
         string confirmInput;
         while (confirmInput != "yes"){
-            printf("Confirm: yes/no");
+            printf("Confirm: yes/no\n");
             cin >> confirmInput;
             if (confirmInput == "no"){
                 ROS_ERROR("Said no! Quit");
@@ -106,10 +108,10 @@ public:
         };
         dl.initialize(vn);
 
-        printf("Waiting for command to take off...");
+        printf("Waiting for command to take off...\n");
         sleep(3);
 
-        printf("Start Control State Machine...");
+        printf("Start Control State Machine...\n");
 
         toStepTakeoff();
         if (startState == "takeoff") {
@@ -168,7 +170,7 @@ public:
 
     void toStepBack(){
         taskState = BACK;
-        desiredPoint = newPoint(0, 3, 2.0);
+        desiredPoint = backPoint1;
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
     }
@@ -182,7 +184,7 @@ public:
     }
 
     void StepTakeoff() {
-        printf("###----StepTakeoff----###");
+        printf("###----StepTakeoff----###\n");
         fc.uavTakeoff();
         if (fc.enoughTimeAfter(taskBeginTime, 5) && fc.currentPos.z >= 0.3){
             toStepAscend();
@@ -190,7 +192,7 @@ public:
     }
 
     void StepAscend() {
-        printf("###----StepAscend----###");
+        printf("###----StepAscend----###\n");
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (nearlyIs(fc.currentPos.z, desiredPoint.z, 1)){
             toStepPrepare(true);
@@ -198,8 +200,8 @@ public:
     }
 
     void StepPrepare() {
-        printf("###----StepPrepare----###");
-        printf("Prepare to %ld/%ld point", holdCnt + 1, holdPoints.size());
+        printf("###----StepPrepare----###\n");
+        printf("Prepare to %ld/%ld point\n", holdCnt + 1, holdPoints.size());
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (fc.isNear(desiredPoint, 1.0) && fc.yawNearDeg(desiredYawDeg, 5.0)){
             toStepHold();
@@ -207,7 +209,7 @@ public:
     }
 
     void StepHold() {
-        printf("###----StepHold----###");
+        printf("###----StepHold----###\n");
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (toc - tic >= holdTimes[holdCnt] && searchOver){
             holdCnt++;
@@ -221,7 +223,7 @@ public:
     }
 
     void StepBack() {
-        printf("###----StepBack----###");
+        printf("###----StepBack----###\n");
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (nearlyIs(fc.currentPos.z, desiredPoint.z, 1.0)){
             toStepLand();
@@ -229,8 +231,8 @@ public:
     }
 
     void StepLand() {
-        printf("###----StepLand----###");
-        printf("Landing...");
+        printf("###----StepLand----###\n");
+        printf("Landing...\n");
         fc.uavLand();
         if (nearlyIs(fc.currentPos.z, 0.0, 0.2)) {
             toStepEnd();
@@ -273,12 +275,12 @@ public:
         while (ros::ok()) {
             // std::cout << "\033c" << std::flush;
             taskTime = fc.getTimeNow() - taskBeginTime;
-            printf("-----------");
-            printf("Task time: %.2lf, State time: %.2lf", taskTime, toc - tic);
-            printf("suav (State: %d) @ %s", taskState, outputStr(fc.currentPos).c_str());
-            printf("Desired Point: %s\n", outputStr(desiredPoint).c_str());
-            printf("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg", fc.currentRPYDeg.x, fc.currentRPYDeg.y, fc.currentRPYDeg.z);
-            printf("Search Over: %d", searchOver);                        
+            printf("-----------\n");
+            printf("Task time: %.2lf, State time: %.2lf\n", taskTime, toc - tic);
+            printf("suav (State: %d) @ %s\n", taskState, outputStr(fc.currentPos).c_str());
+            printf("Desired Point: %s\n\n", outputStr(desiredPoint).c_str());
+            printf("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg\n", fc.currentRPYDeg.x, fc.currentRPYDeg.y, fc.currentRPYDeg.z);
+            printf("Search Over: %d\n", searchOver);                        
             if (fc.EMERGENCY) {
                 fc.uavHoldCtrl();
                 printf("!!!!!!!!!!!!EMERGENCY!!!!!!!!!!!!\n");
@@ -315,7 +317,7 @@ int main(int argc, char** argv) {
     }
 
 	string uavName = std::string(argv[1]);
-	printf("Vehicle name: %s", uavName.c_str());
+	printf("Vehicle name: %s\n", uavName.c_str());
 
     bool ON_GROUND = true;
     if (argc > 2) {

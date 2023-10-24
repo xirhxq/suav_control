@@ -224,13 +224,13 @@ public:
 
     void setPositionOffset() {
 #ifdef GPS_POS
-        printf("GPS Position: %s", outputStr(currentGPS).c_str());
+        printf("GPS Position: %s\n", outputStr(currentGPS).c_str());
 #endif
 #ifdef UWB_POS
-        printf("UWB Position: %s", outputStr(currentPosUWB).c_str());
+        printf("UWB Position: %s\n", outputStr(currentPosUWB).c_str());
 #endif
         setValue(positionOffset, currentPos);
-        printf("Position offset ENU / m: %s", outputStr(positionOffset).c_str());
+        printf("Position offset ENU / m: %s\n", outputStr(positionOffset).c_str());
     }
 
     Point compensatePositionOffset(Point _p){
