@@ -145,7 +145,7 @@ public:
 
     void StepAscend() {
         ROS_INFO("###----StepAscend----###");
-        auto expectedPoint = MyDataFun::newPoint(0, 3, 60.0);
+        auto expectedPoint = MyDataFun::newPoint(0, 3, 100.0);
         ROS_INFO("Ascend To Point: %s", MyDataFun::outputStr(expectedPoint).c_str());
         fc.uavControlToPointWithYaw(expectedPoint, fc.yawOffsetDeg);
         if (MyMathFun::nearlyIs(fc.currentPos.z, expectedPoint.z, 1)){
@@ -157,7 +157,7 @@ public:
         ROS_INFO("###----StepHold----###");
         double holdTime = 6;
         // auto expectedPoint = fc.compensateYawOffset(MyDataFun::newPoint(10.0, 8.0, 2.0), fc.yawOffsetDeg);
-        auto expectedPoint = MyDataFun::newPoint(0, 3, 60.0);
+        auto expectedPoint = MyDataFun::newPoint(0, 3, 100.0);
         ROS_INFO("Hold %.2lf", fc.getTimeNow() - holdBeginTime);
         ROS_INFO("ExpectedPoint: %s", MyDataFun::outputStr(expectedPoint).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
