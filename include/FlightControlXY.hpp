@@ -9,38 +9,78 @@
 #define YAW_KP 1.0 
 
 class XY_CMD {
-public:
-    XY_CMD() {
-        cmd.data.resize(15, 0.0); 
-    }
-    auto getVeloCmd(double x, double y, double z, double yaw){
-        cmd.data.resize(15, 0.0);
-        cmd.data[0] = 2;
-        cmd.data[1] = 2;
-        cmd.data[2] = 1;
-        cmd.data[6] = x;
-        cmd.data[7] = y;
-        cmd.data[8] = z;
-        cmd.data[9] = yaw;
-        cmd.data[13] = 11;
-        return cmd;
-    }
-    auto getPositionCmd(double x, double y, double z, double yaw){
-        cmd.data.resize(15, 0.0);
+private:
+    void setPositionCmd(double x, double y, double z) {
         cmd.data[0] = 1;
         cmd.data[1] = 1;
-        cmd.data[2] = 1;
         cmd.data[3] = x;
         cmd.data[4] = y;
         cmd.data[5] = z;
-        cmd.data[9] = yaw;
         cmd.data[13] = 11;
+    }
+    void setVelocityCmd(double x, double y, double z) {
+        cmd.data[0] = 2;
+        cmd.data[1] = 2;
+        cmd.data[6] = x;
+        cmd.data[7] = y;
+        cmd.data[8] = z;
+        cmd.data[13] = 11;
+    }
+    void setYawCmd(double yaw) {
+        cmd.data[2] = 1;
+        cmd.data[9] = yaw * RAD2DEG_COE;
+        cmd.data[13] = 11;
+    }
+    void setYawRateCmd(double yawRate) {
+        cmd.data[2] = 3;
+        cmd.data[9] = yawRate * RAD2DEG_COE;
+        cmd.data[13] = 11;
+    }
+public:
+    // Yaw & YawRate: in DEG!!!
+    XY_CMD() {
+        cmd.data.resize(15, 0.0); 
+    }
+    auto getPositionYawCmd(double x, double y, double z, double yaw){
+        cmd.data.resize(15, 0.0);
+        setPositionCmd(x, y, z);
+        setYawCmd(yaw);
+        return cmd;
+    }
+    auto getVelocityYawCmd(double x, double y, double z, double yaw){
+        cmd.data.resize(15, 0.0);
+        setVelocityCmd(x, y, z);
+        setYawCmd(yaw);
+        return cmd;
+    }
+    auto getVelocityYawRateCmd(double x, double y, double z, double yawRate){
+        cmd.data.resize(15, 0.0);
+        setVelocityCmd(x, y, z);
+        setYawRateCmd(yawRate);
+        return cmd;
+    }
+    auto getSpinCmd(){
+        cmd.data.resize(15, 0.0);
+        cmd.data[13] = 22;
+        cmd.data[14] = 9;
+        return cmd;
+    }
+    auto getTakeoffCmd(){
+        cmd.data.resize(15, 0.0);
+        cmd.data[13] = 22;
+        cmd.data[14] = 1;
         return cmd;
     }
     auto getLandCmd(){
         cmd.data.resize(15, 0.0);
         cmd.data[13] = 22;
         cmd.data[14] = 16;
+        return cmd;
+    }
+    auto getLockCmd(){
+        cmd.data.resize(15, 0.0);
+        cmd.data[13] = 22;
+        cmd.data[14] = 40;
         return cmd;
     }
 private:
