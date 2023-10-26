@@ -145,7 +145,7 @@ namespace MyDataFun{
     }
 
     template<typename T>
-    void output$1ector(std::vector<T> & v){
+    void outputVector(std::vector<T> & v){
         for (auto i: v){
             printf("%s\n", output$1tr(i).c_str());
         }

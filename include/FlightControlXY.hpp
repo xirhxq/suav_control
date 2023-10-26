@@ -10,6 +10,10 @@
 
 class XY_CMD {
 private:
+    double xVelSat = 0.1;
+    double yVelSat = 0.1;
+    double zVelSat = 0.2;
+    double yawRateDegSat = 20;
     void setPositionCmd(double x, double y, double z) {
         cmd.data[0] = 1;
         cmd.data[1] = 1;
@@ -21,67 +25,74 @@ private:
     void setVelocityCmd(double x, double y, double z) {
         cmd.data[0] = 2;
         cmd.data[1] = 2;
-        cmd.data[6] = x;
-        cmd.data[7] = y;
-        cmd.data[8] = z;
+        cmd.data[6] = MyMathFun::LimitValue(x, xVelSat);
+        cmd.data[7] = MyMathFun::LimitValue(y, yVelSat);
+        cmd.data[8] = MyMathFun::LimitValue(z, zVelSat);
         cmd.data[13] = 11;
     }
-    void setYawCmd(double yaw) {
+    void setYawCmd(double yawDeg) {
         cmd.data[2] = 1;
-        cmd.data[9] = yaw * RAD2DEG_COE;
+        cmd.data[9] = MyMathFun::degreeRound0To360(yawDeg) * DEG2RAD_COE;
         cmd.data[13] = 11;
     }
-    void setYawRateCmd(double yawRate) {
+    void setYawRateCmd(double yawRateDeg) {
         cmd.data[2] = 3;
-        cmd.data[9] = yawRate * RAD2DEG_COE;
+        cmd.data[9] = MyMathFun::LimitValue(yawRateDeg, yawRateDegSat);
         cmd.data[13] = 11;
+    }
+    auto returnCmd() {
+        printf("CMD: ");
+        for (auto a: cmd.data) {
+            printf("%.2f ", a);
+        }
+        printf("\n");
+        return cmd;
     }
 public:
-    // Yaw & YawRate: in DEG!!!
     XY_CMD() {
         cmd.data.resize(15, 0.0); 
     }
-    auto getPositionYawCmd(double x, double y, double z, double yaw){
+    auto getPositionYawCmd(double x, double y, double z, double yawDeg){
         cmd.data.resize(15, 0.0);
         setPositionCmd(x, y, z);
-        setYawCmd(yaw);
-        return cmd;
+        setYawCmd(yawDeg);
+        return returnCmd();
     }
-    auto getVelocityYawCmd(double x, double y, double z, double yaw){
+    auto getVelocityYawCmd(double x, double y, double z, double yawDeg){
         cmd.data.resize(15, 0.0);
         setVelocityCmd(x, y, z);
-        setYawCmd(yaw);
-        return cmd;
+        setYawCmd(yawDeg);
+        return returnCmd();
     }
-    auto getVelocityYawRateCmd(double x, double y, double z, double yawRate){
+    auto getVelocityYawRateCmd(double x, double y, double z, double yawRateDeg){
         cmd.data.resize(15, 0.0);
         setVelocityCmd(x, y, z);
-        setYawRateCmd(yawRate);
-        return cmd;
+        setYawRateCmd(yawRateDeg);
+        return returnCmd();
     }
     auto getSpinCmd(){
         cmd.data.resize(15, 0.0);
         cmd.data[13] = 22;
         cmd.data[14] = 9;
-        return cmd;
+        return returnCmd();
     }
     auto getTakeoffCmd(){
         cmd.data.resize(15, 0.0);
         cmd.data[13] = 22;
         cmd.data[14] = 1;
-        return cmd;
+        return returnCmd();
     }
     auto getLandCmd(){
         cmd.data.resize(15, 0.0);
         cmd.data[13] = 22;
         cmd.data[14] = 16;
-        return cmd;
+        return returnCmd();
     }
     auto getLockCmd(){
         cmd.data.resize(15, 0.0);
         cmd.data[13] = 22;
         cmd.data[14] = 40;
-        return cmd;
+        return returnCmd();
     }
 private:
     std_msgs::Float32MultiArray cmd;
@@ -121,7 +132,7 @@ public:
     //0: auto; 1: remote control; 2 stabilize; 7: user mode
     double currentUAVStatus;
 
-    double yawOffset;
+    double yawOffsetDeg;
 
     Point positionOffset;
 
@@ -130,7 +141,7 @@ public:
 
     FLIGHT_CONTROL(std::string uavName, ros::NodeHandle nh_): nh(nh_){
         flightDataSub = nh.subscribe(uavName + "/xy_fcu/flight_data", 10, &FLIGHT_CONTROL::flightDataCallback, this);
-        ctrlCmdPub = nh.advertise<std_msgs::Float32MultiArray>(uavName + "/fl5_guidance/guidance_cmds", 10);
+        ctrlCmdPub = nh.advertise<std_msgs::Float32MultiArray>(uavName + "/xy_fcu/xy_cmd", 10);
         locSub = nh.subscribe(uavName + "/uwb/filter/odom", 10, &FLIGHT_CONTROL::locCallback, this);
     }
 
@@ -183,8 +194,8 @@ public:
 
     Point compensateOffset(Point _p){
         Point res;
-        res.x = _p.x * cos(yawOffset) - _p.y * sin(yawOffset) + positionOffset.x;
-        res.y = _p.x * sin(yawOffset) + _p.y * cos(yawOffset) + positionOffset.y;
+        res.x = _p.x * cos(yawOffsetDeg) - _p.y * sin(yawOffsetDeg) + positionOffset.x;
+        res.y = _p.x * sin(yawOffsetDeg) + _p.y * cos(yawOffsetDeg) + positionOffset.y;
         res.z = _p.z;
         return res;
     }
@@ -217,53 +228,59 @@ public:
         return MyDataFun::dis2d(a, currentPos) <= r;
     }
 
-    void uavHoldCtrl() {
-        ctrlCmdPub.publish(xyCmd.getVeloCmd(0, 0, 0, 0));
+    void uavSpin() {
+        ctrlCmdPub.publish(xyCmd.getSpinCmd());
     }
 
-    void uavAdjustYaw(double _yaw) {
-        ctrlCmdPub.publish(xyCmd.getVeloCmd(0, 0, _yaw, 0));
+    void uavTakeoff() {
+        ctrlCmdPub.publish(xyCmd.getTakeoffCmd());
     }
 
     void uavLand() {
         ctrlCmdPub.publish(xyCmd.getLandCmd());
     }
 
-    void uavVelocityYawCtrl(double _vx, double _vy, double _vz, double _yaw) {
-        ctrlCmdPub.publish(xyCmd.getVeloCmd(_vx, _vy, _vz, _yaw));
+    void uavLock() {
+        ctrlCmdPub.publish(xyCmd.getLockCmd());
     }
 
-    void uavPositionYawCtrl(double _x, double _y, double _z, double _yaw) {
-        ctrlCmdPub.publish(xyCmd.getPositionCmd(_x, _y, _z, _yaw));
+    void uavHoldCtrl() {
+        ctrlCmdPub.publish(xyCmd.getVelocityYawCmd(0, 0, 0, 0));
+    }
+
+    void uavAdjustYaw(double _yawDeg) {
+        ctrlCmdPub.publish(xyCmd.getVelocityYawCmd(0, 0, _yawDeg, 0));
+    }
+
+    void uavVelocityYawCtrl(double _vx, double _vy, double _vz, double _yawDeg) {
+        ctrlCmdPub.publish(xyCmd.getVelocityYawCmd(_vx, _vy, _vz, _yawDeg));
+    }
+
+    void uavPositionYawCtrl(double _x, double _y, double _z, double _yawDeg) {
+        ctrlCmdPub.publish(xyCmd.getPositionYawCmd(_x, _y, _z, _yawDeg));
     }
 
     template<typename T>
-    void uavVelocityYawCtrl(T posDiff, double yaw){
+    void uavVelocityYawKPCtrl(T posDiff, double yawDeg){
         T vel;
         vel.x = posDiff.x * X_KP;
         vel.y = posDiff.y * Y_KP;
         vel.z = posDiff.z * Z_KP;
-        geometry_msgs::Vector3 sat;
-        sat.x = 0.1;
-        sat.y = 0.1;
-        sat.z = 0.2;
-        MyDataFun::saturateVel(vel, sat);
-        ROS_INFO("Velo cmd: %s", MyDataFun::outputStr(vel).c_str());
-        uavVelocityYawCtrl(vel.x, vel.y, vel.z, yaw);
+        uavVelocityYawCtrl(vel.x, vel.y, vel.z, yawDeg);
     }
 
     template<typename T>
     void uavControlToPointFacingIt(T ctrlCmd){
-        double yaw = MyDataFun::angle2d(currentPos, ctrlCmd);
-        yaw = MyMathFun::radRound(yaw);
-        if (MyDataFun::dis2d(ctrlCmd, currentPos) <= 1) yaw = 0;
-        uavVelocityYawCtrl(MyDataFun::minus(ctrlCmd, currentPos), yaw);
+        double yawDeg = MyDataFun::angle2d(currentPos, ctrlCmd) * RAD2DEG_COE;
+        yawDeg = MyMathFun::degreeRound0To360(yawDeg);
+        if (MyDataFun::dis2d(ctrlCmd, currentPos) <= 1) yawDeg = 0;
+        uavVelocityYawKPCtrl(MyDataFun::minus(ctrlCmd, currentPos), yawDeg);
     }
 
     template<typename T>
-    void uavControlToPointWithYaw(T ctrlCmd, double yaw){
-        yaw = MyMathFun::radRound(yaw);
-        uavVelocityYawCtrl(MyDataFun::minus(ctrlCmd, currentPos), yaw);
+    void uavControlToPointWithYaw(T ctrlCmd, double yawDeg){
+        yawDeg = MyMathFun::degreeRound(yawDeg);
+        uavVelocityYawKPCtrl(MyDataFun::minus(ctrlCmd, currentPos), yawDeg);
     }
 
     double getTimeNow(){

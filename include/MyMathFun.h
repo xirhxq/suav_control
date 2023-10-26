@@ -209,6 +209,16 @@ namespace MyMathFun{
 		return deg;
 	}
 
+	double degreeRound0To360(double deg){
+		while (deg < 0.0){
+			deg += 360.0;
+		}
+		while (deg >= 360.0){
+			deg -= 360.0;
+		}
+		return deg;
+	}
+
 	double radRound(double rad){
 		if (rad < -PI){
 			return rad + 2 * PI;
