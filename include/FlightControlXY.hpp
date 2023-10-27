@@ -10,9 +10,9 @@
 
 class XY_CMD {
 private:
-    double xVelSat = 0.1;
-    double yVelSat = 0.1;
-    double zVelSat = 0.2;
+    double xVelSat = 0.5;
+    double yVelSat = 0.5;
+    double zVelSat = 2;
     double yawRateDegSat = 20;
     void setPositionCmd(double x, double y, double z) {
         cmd.data[0] = 1;
@@ -142,7 +142,7 @@ public:
     FLIGHT_CONTROL(std::string uavName, ros::NodeHandle nh_): nh(nh_){
         flightDataSub = nh.subscribe(uavName + "/xy_fcu/flight_data", 10, &FLIGHT_CONTROL::flightDataCallback, this);
         ctrlCmdPub = nh.advertise<std_msgs::Float32MultiArray>(uavName + "/xy_fcu/xy_cmd", 10);
-        locSub = nh.subscribe(uavName + "/uwb/filter/odom", 10, &FLIGHT_CONTROL::locCallback, this);
+        locSub = nh.subscribe(uavName + "/filter/odom", 10, &FLIGHT_CONTROL::locCallback, this);
     }
 
     void flightDataCallback(const std_msgs::Float32MultiArray &msgs) {
