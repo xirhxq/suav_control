@@ -115,9 +115,9 @@ public:
     // RPY
     geometry_msgs::Vector3 currentEulerDeg;
 
-    geometry_msgs::Vector3 currentPos;
+    geometry_msgs::Vector3 currentPosXY;
 
-    geometry_msgs::Vector3 currentLocPos;
+    geometry_msgs::Vector3 currentPos;
 
     geometry_msgs::Vector3 currentVel;
 
@@ -161,9 +161,9 @@ public:
         currentVel.y = msgs.data[8];
         currentVel.z = msgs.data[9];
 
-        currentPos.x = msgs.data[10];
-        currentPos.y = msgs.data[11];
-        currentPos.z = msgs.data[12];
+        currentPosXY.x = msgs.data[10];
+        currentPosXY.y = msgs.data[11];
+        currentPosXY.z = msgs.data[12];
 
         currentEulerRad.x = msgs.data[13];
         currentEulerRad.y = msgs.data[14];
@@ -181,7 +181,7 @@ public:
     }
 
     void locCallback(const nav_msgs::Odometry::ConstPtr& msg){
-        MyDataFun::setValue(currentLocPos, msg->pose.pose.position);
+        MyDataFun::setValue(currentPos, msg->pose.pose.position);
     }
 
     Point compensatePositionOffset(Point _p){
