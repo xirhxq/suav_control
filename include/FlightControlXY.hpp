@@ -107,17 +107,13 @@ private:
 public:
     double currentHorMode, currentVerMode, currentYawMode;
 
-    // RPY
-    geometry_msgs::Vector3 currentEulerRad;
-
-    // RPY
-    geometry_msgs::Vector3 currentEulerDeg;
+    geometry_msgs::Vector3 currentRPYRad, currentRPYDeg;
 
     geometry_msgs::Vector3 currentPosXY;
 
     geometry_msgs::Vector3 currentPos;
 
-    geometry_msgs::Vector3 currentVel;
+    geometry_msgs::Vector3 currentVelENU;
 
     double currentBaroHeight;
 
@@ -154,20 +150,19 @@ public:
 
         currentBaroHeight = msgs.data[6];
 
-        //enu
-        currentVel.x = msgs.data[7];
-        currentVel.y = msgs.data[8];
-        currentVel.z = msgs.data[9];
+        currentVelENU.x = msgs.data[7];
+        currentVelENU.y = msgs.data[8];
+        currentVelENU.z = msgs.data[9];
 
         currentPosXY.x = msgs.data[10];
         currentPosXY.y = msgs.data[11];
         currentPosXY.z = msgs.data[12];
 
-        currentEulerRad.x = msgs.data[13];
-        currentEulerRad.y = msgs.data[14];
-        currentEulerRad.z = msgs.data[15];
+        currentRPYRad.x = msgs.data[13];
+        currentRPYRad.y = msgs.data[14];
+        currentRPYRad.z = msgs.data[15];
 
-        scale(currentEulerRad, RAD2DEG_COE));
+        setValue(currentEulerDeg, scale(currentRPYRad, RAD2DEG_COE));
 
         currentThrottle = msgs.data[16];
 
