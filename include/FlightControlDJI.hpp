@@ -1,6 +1,4 @@
-#include "MyDataFun.h"
-#include "MyMathFun.h"
-#include "Utils.h"
+#include "libFlightControl.hpp"
 
 #define KP 0.2
 #define X_KP KP
@@ -82,13 +80,13 @@ public:
         current_atti.quaternion = msg->quaternion;
         current_euler_angle = toEulerAngle(current_atti.quaternion);
         // ROS_INFO("get attitude %s",
-        // MyDataFun::output_str(current_euler_angle).c_str());
+        // output_str(current_euler_angle).c_str());
     }
     void gimbal_callback(const geometry_msgs::Vector3Stamped::ConstPtr& msg) {
         current_gimbal_angle.x = msg->vector.y;
         current_gimbal_angle.y = msg->vector.x;
         current_gimbal_angle.z = msg->vector.z;
-        // ROS_INFO("Gimbal %s", MyDataFun::output_str(current_gimbal_angle).c_str());
+        // ROS_INFO("Gimbal %s", output_str(current_gimbal_angle).c_str());
     }
 
     void height_callback(const std_msgs::Float32::ConstPtr& msg) {
@@ -139,7 +137,7 @@ public:
     }
 
     void range_pos_callback(const nav_msgs::Odometry::ConstPtr& msg){
-        MyDataFun::set_value(current_range_pos, msg->pose.pose.position);
+        set_value(current_range_pos, msg->pose.pose.position);
         // current_range_pos = compensate_yaw_offset(current_range_pos, yaw_offset);
         #ifdef UWB_INSTEAD_VO
         current_pos_raw.x = current_range_pos.x;
@@ -171,12 +169,12 @@ public:
 
     template<typename T>
     bool is_near(T a, double r){
-        return MyDataFun::dis(a, current_pos_raw) <= r;
+        return dis(a, current_pos_raw) <= r;
     }
 
     template<typename T>
     bool is_near_2d(T a, double r){
-        return MyDataFun::dis_2d(a, current_pos_raw) <= r;
+        return dis_2d(a, current_pos_raw) <= r;
     }
 
 
@@ -391,27 +389,27 @@ public:
         sat.x = 0.1;
         sat.y = 0.1;
         sat.z = 0.2;
-        MyDataFun::saturate_vel(vel, sat);
-        ROS_INFO("Velo cmd: %s", MyDataFun::output_str(vel).c_str());
+        saturate_vel(vel, sat);
+        ROS_INFO("Velo cmd: %s", output_str(vel).c_str());
         M210_velocity_yaw_rate_ctrl(vel.x, vel.y, vel.z, yaw_rate);
     }
 
     template<typename T>
     void UAV_Control_to_Point_facing_it(T ctrl_cmd){
-        double yaw_diff = MyDataFun::angle_2d(current_pos_raw, ctrl_cmd) - current_euler_angle.z;
-        yaw_diff = MyMathFun::rad_round(yaw_diff);
-        if (MyDataFun::dis_2d(ctrl_cmd, current_pos_raw) <= 1) yaw_diff = 0;
+        double yaw_diff = angle_2d(current_pos_raw, ctrl_cmd) - current_euler_angle.z;
+        yaw_diff = rad_round(yaw_diff);
+        if (dis_2d(ctrl_cmd, current_pos_raw) <= 1) yaw_diff = 0;
         ROS_INFO("Yaw diff: %.2lf", yaw_diff);
-        UAV_velocity_yaw_rate_ctrl(MyDataFun::minus(ctrl_cmd, current_pos_raw), yaw_diff);
+        UAV_velocity_yaw_rate_ctrl(minus(ctrl_cmd, current_pos_raw), yaw_diff);
     }
 
     template<typename T>
     void UAV_Control_to_Point_with_yaw(T ctrl_cmd, double _yaw){
         double yaw_diff = _yaw - current_euler_angle.z;
-        yaw_diff = MyMathFun::rad_round(yaw_diff);
-        if (MyDataFun::dis_2d(ctrl_cmd, current_pos_raw) <= 1) yaw_diff = 0;
+        yaw_diff = rad_round(yaw_diff);
+        if (dis_2d(ctrl_cmd, current_pos_raw) <= 1) yaw_diff = 0;
         ROS_INFO("Yaw diff: %.2lf", yaw_diff);
-        UAV_velocity_yaw_rate_ctrl(MyDataFun::minus(ctrl_cmd, current_pos_raw), yaw_diff);
+        UAV_velocity_yaw_rate_ctrl(minus(ctrl_cmd, current_pos_raw), yaw_diff);
     }
 
     template<typename T>

@@ -1,6 +1,4 @@
-#include "MyDataFun.h"
-#include "MyMathFun.h"
-#include "Utils.h"
+#include "libFlightControl.hpp"
 
 #define KP 0.2
 #define X_KP KP
@@ -25,19 +23,19 @@ private:
     void setVelocityCmd(double x, double y, double z) {
         cmd.data[0] = 2;
         cmd.data[1] = 2;
-        cmd.data[6] = MyMathFun::LimitValue(x, xVelSat);
-        cmd.data[7] = MyMathFun::LimitValue(y, yVelSat);
-        cmd.data[8] = MyMathFun::LimitValue(z, zVelSat);
+        cmd.data[6] = LimitValue(x, xVelSat);
+        cmd.data[7] = LimitValue(y, yVelSat);
+        cmd.data[8] = LimitValue(z, zVelSat);
         cmd.data[13] = 11;
     }
     void setYawCmd(double yawDeg) {
         cmd.data[2] = 1;
-        cmd.data[9] = MyMathFun::degreeRound0To360(yawDeg) * DEG2RAD_COE;
+        cmd.data[9] = degreeRound0To360(yawDeg) * DEG2RAD_COE;
         cmd.data[13] = 11;
     }
     void setYawRateCmd(double yawRateDeg) {
         cmd.data[2] = 3;
-        cmd.data[9] = MyMathFun::LimitValue(yawRateDeg, yawRateDegSat);
+        cmd.data[9] = LimitValue(yawRateDeg, yawRateDegSat);
         cmd.data[13] = 11;
     }
     auto returnCmd() {
@@ -169,7 +167,7 @@ public:
         currentEulerRad.y = msgs.data[14];
         currentEulerRad.z = msgs.data[15];
 
-        MyDataFun::setValue(currentEulerDeg, MyDataFun::scale(currentEulerRad, RAD2DEG_COE));
+        scale(currentEulerRad, RAD2DEG_COE));
 
         currentThrottle = msgs.data[16];
 
@@ -181,7 +179,7 @@ public:
     }
 
     void locCallback(const nav_msgs::Odometry::ConstPtr& msg){
-        MyDataFun::setValue(currentPos, msg->pose.pose.position);
+        setValue(currentPos, msg->pose.pose.position);
     }
 
     Point compensatePositionOffset(Point _p){
@@ -220,12 +218,12 @@ public:
 
     template<typename T>
     bool isNear(T a, double r){
-        return MyDataFun::dis(a, currentPos) <= r;
+        return dis(a, currentPos) <= r;
     }
 
     template<typename T>
     bool isNear2d(T a, double r){
-        return MyDataFun::dis2d(a, currentPos) <= r;
+        return dis2d(a, currentPos) <= r;
     }
 
     void uavSpin() {
@@ -271,16 +269,16 @@ public:
 
     template<typename T>
     void uavControlToPointFacingIt(T ctrlCmd){
-        double yawDeg = MyDataFun::angle2d(currentPos, ctrlCmd) * RAD2DEG_COE;
-        yawDeg = MyMathFun::degreeRound0To360(yawDeg);
-        if (MyDataFun::dis2d(ctrlCmd, currentPos) <= 1) yawDeg = 0;
-        uavVelocityYawKPCtrl(MyDataFun::minus(ctrlCmd, currentPos), yawDeg);
+        double yawDeg = angle2d(currentPos, ctrlCmd) * RAD2DEG_COE;
+        yawDeg = degreeRound0To360(yawDeg);
+        if (dis2d(ctrlCmd, currentPos) <= 1) yawDeg = 0;
+        uavVelocityYawKPCtrl(minus(ctrlCmd, currentPos), yawDeg);
     }
 
     template<typename T>
     void uavControlToPointWithYaw(T ctrlCmd, double yawDeg){
-        yawDeg = MyMathFun::degreeRound(yawDeg);
-        uavVelocityYawKPCtrl(MyDataFun::minus(ctrlCmd, currentPos), yawDeg);
+        yawDeg = degreeRound(yawDeg);
+        uavVelocityYawKPCtrl(minus(ctrlCmd, currentPos), yawDeg);
     }
 
     double getTimeNow(){

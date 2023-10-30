@@ -1,9 +1,5 @@
-#include "Utils.h"
-#include "MyDataFun.h"
-#include "MyMathFun.h"
 #include "FlightControlXY.hpp"
 #include "DataLogger.hpp"
-#define CAMERA_ANGLE 30
 
 using namespace std;
 
