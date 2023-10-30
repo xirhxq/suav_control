@@ -162,7 +162,7 @@ public:
         currentRPYRad.y = msgs.data[14];
         currentRPYRad.z = msgs.data[15];
 
-        setValue(currentEulerDeg, scale(currentRPYRad, RAD2DEG_COE));
+        setValue(currentRPYDeg, scale(currentRPYRad, RAD2DEG_COE));
 
         currentThrottle = msgs.data[16];
 
