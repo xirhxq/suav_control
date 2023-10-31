@@ -8,37 +8,56 @@
 
 class XY_CMD {
 private:
-    double xVelSat = 0.5;
-    double yVelSat = 0.5;
-    double zVelSat = 2;
+    double eVelSat = 0.5, nVelSat = 0.5, uVelSat = 2;
+    double pDegSat = 5, rDegSat = 5;
+    double pRadSat = pDegSat * DEG2RAD_COE, rRadSat = rDegSat * DEG2RAD_COE;
+    double fAccSat = 0.2, lAccSat = 0.2, uAccSat = 0.2;
     double yawRateDegSat = 20;
-    void setPositionCmd(double x, double y, double z) {
+    void setHorPosition(double ePos, double nPos) {
         cmd.data[0] = 1;
-        cmd.data[1] = 1;
-        cmd.data[3] = x;
-        cmd.data[4] = y;
-        cmd.data[5] = z;
+        cmd.data[3] = ePos;
+        cmd.data[4] = nPos;
         cmd.data[13] = 11;
     }
-    void setVelocityCmd(double x, double y, double z) {
+    void setHorVelocity(double eVel, double nVel) {
         cmd.data[0] = 2;
-        cmd.data[1] = 2;
-        cmd.data[6] = LimitValue(x, xVelSat);
-        cmd.data[7] = LimitValue(y, yVelSat);
-        cmd.data[8] = LimitValue(z, zVelSat);
+        cmd.data[6] = LimitValue(eVel, eVelSat);
+        cmd.data[7] = LimitValue(nVel, nVelSat);
         cmd.data[13] = 11;
     }
-    void setYawCmd(double yawDeg) {
+    void setHorAttitude(double pRad, double rRad) {
+        cmd.data[0] = 3;
+        cmd.data[10] = LimitValue(radRound(pRad), pRadSat));
+        cmd.data[11] = LimitValue(radRound(rRad), rRadSat));
+        cmd.data[13] = 11;
+    }
+    void setHorAcceleration(double fAcc, double lAcc) {
+        cmd.data[0] = 4;
+        cmd.data[6] = LimitValue(fAcc, fAccSat);
+        cmd.data[7] = LimitValue(lAcc, lAccSat);
+        cmd.data[13] = 11;
+    }
+    void setVerPosition(double uPos) {
+        cmd.data[1] = 1;
+        cmd.data[5] = uPos;
+        cmd.data[13] = 11;
+    }
+    void setVerVelocity(double uVel) {
+        cmd.data[1] = 2;
+        cmd.data[8] = LimitValue(uVel, uVelSat);
+        cmd.data[13] = 11;
+    }
+    void setYaw(double yawDeg) {
         cmd.data[2] = 1;
         cmd.data[9] = degreeRound0To360(yawDeg) * DEG2RAD_COE;
         cmd.data[13] = 11;
     }
-    void setYawRateCmd(double yawRateDeg) {
+    void setYawRate(double yawRateDeg) {
         cmd.data[2] = 3;
         cmd.data[9] = LimitValue(yawRateDeg, yawRateDegSat);
         cmd.data[13] = 11;
     }
-    auto returnCmd() {
+    auto getCmd() {
         printf("CMD: ");
         for (auto a: cmd.data) {
             printf("%.2f ", a);
@@ -50,23 +69,33 @@ public:
     XY_CMD() {
         cmd.data.resize(15, 0.0); 
     }
-    auto getPositionYawCmd(double x, double y, double z, double yawDeg){
+    auto getPositionPositionYawCmd(double ePos, double nPos, double uPos, double yawDeg){
         cmd.data.resize(15, 0.0);
-        setPositionCmd(x, y, z);
-        setYawCmd(yawDeg);
-        return returnCmd();
+        setHorPosition(ePos, nPos);
+        setVerPosition(uPos);
+        setYaw(yawDeg);
+        return getCmd();
     }
-    auto getVelocityYawCmd(double x, double y, double z, double yawDeg){
+    auto getVelocityVelocityYawCmd(double eVel, double nVel, double uVel, double yawDeg){
         cmd.data.resize(15, 0.0);
-        setVelocityCmd(x, y, z);
-        setYawCmd(yawDeg);
-        return returnCmd();
+        setHorVelocity(eVel, nVel);
+        setVerVelocity(uVel);
+        setYaw(yawDeg);
+        return getCmd();
     }
-    auto getVelocityYawRateCmd(double x, double y, double z, double yawRateDeg){
+    auto getVelocityVelocityYawRateCmd(double eVel, double nVel, double uVel, double yawRateDeg){
         cmd.data.resize(15, 0.0);
-        setVelocityCmd(x, y, z);
-        setYawRateCmd(yawRateDeg);
-        return returnCmd();
+        setHorVelocity(eVel, nVel);
+        setVerVelocity(uVel);
+        setYawRate(yawRateDeg);
+        return getCmd();
+    }
+    auto getAttitudeVelocityYawCmd(double pRad, double rRad, double uVel, double yawDeg){
+        cmd.data.resize(15, 0.0);
+        setHorAttitude(pRad, rRad);
+        setVerVelocity(uVel);
+        setYaw(yawDeg);
+        return getCmd();
     }
     auto getSpinCmd(){
         cmd.data.resize(15, 0.0);
@@ -131,7 +160,6 @@ public:
     Point positionOffset;
 
     bool EMERGENCY = false;
-
 
     FLIGHT_CONTROL(std::string uavName, ros::NodeHandle nh_): nh(nh_){
         flightDataSub = nh.subscribe(uavName + "/xy_fcu/flight_data", 10, &FLIGHT_CONTROL::flightDataCallback, this);
@@ -238,19 +266,27 @@ public:
     }
 
     void uavHoldCtrl() {
-        ctrlCmdPub.publish(xyCmd.getVelocityYawCmd(0, 0, 0, 0));
+        ctrlCmdPub.publish(xyCmd.getVelocityVelocityYawCmd(0, 0, 0, 0));
     }
 
     void uavAdjustYaw(double _yawDeg) {
-        ctrlCmdPub.publish(xyCmd.getVelocityYawCmd(0, 0, _yawDeg, 0));
+        ctrlCmdPub.publish(xyCmd.getVelocityVelocityYawCmd(0, 0, _yawDeg, 0));
     }
 
-    void uavVelocityYawCtrl(double _vx, double _vy, double _vz, double _yawDeg) {
-        ctrlCmdPub.publish(xyCmd.getVelocityYawCmd(_vx, _vy, _vz, _yawDeg));
+    void uavPositionPositionYawCtrl(double _x, double _y, double _z, double _yawDeg) {
+        ctrlCmdPub.publish(xyCmd.getPositionPositionYawCmd(_x, _y, _z, _yawDeg));
     }
 
-    void uavPositionYawCtrl(double _x, double _y, double _z, double _yawDeg) {
-        ctrlCmdPub.publish(xyCmd.getPositionYawCmd(_x, _y, _z, _yawDeg));
+    void uavVelocityVelocityYawCtrl(double _vx, double _vy, double _vz, double _yawDeg) {
+        ctrlCmdPub.publish(xyCmd.getVelocityVelocityYawCmd(_vx, _vy, _vz, _yawDeg));
+    }
+
+    void uavVelocityVelocityYawRateCtrl(double _vx, double _vy, double _vz, double _yawRateDeg) {
+        ctrlCmdPub.publish(xyCmd.getVelocityVelocityYawRateCmd(_vx, _vy, _vz, _yawRateDeg));
+    }
+
+    void uavAttitudeVelocityYawCtrl(double _pRad, double _rRad, double _vz, double _yawDeg) {
+        ctrlCmdPub.publish(xyCmd.getAttitudeVelocityYawCmd(_pRad, _rRad, _vz, _yawDeg));
     }
 
     template<typename T>
@@ -259,7 +295,7 @@ public:
         vel.x = posDiff.x * X_KP;
         vel.y = posDiff.y * Y_KP;
         vel.z = posDiff.z * Z_KP;
-        uavVelocityYawCtrl(vel.x, vel.y, vel.z, yawDeg);
+        uavVelocityVelocityYawCtrl(vel.x, vel.y, vel.z, yawDeg);
     }
 
     template<typename T>
