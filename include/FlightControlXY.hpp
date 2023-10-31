@@ -27,8 +27,8 @@ private:
     }
     void setHorAttitude(double pRad, double rRad) {
         cmd.data[0] = 3;
-        cmd.data[10] = LimitValue(radRound(pRad), pRadSat));
-        cmd.data[11] = LimitValue(radRound(rRad), rRadSat));
+        cmd.data[10] = LimitValue(radRound(pRad), pRadSat);
+        cmd.data[11] = LimitValue(radRound(rRad), rRadSat);
         cmd.data[13] = 11;
     }
     void setHorAcceleration(double fAcc, double lAcc) {
@@ -101,25 +101,25 @@ public:
         cmd.data.resize(15, 0.0);
         cmd.data[13] = 22;
         cmd.data[14] = 9;
-        return returnCmd();
+        return getCmd();
     }
     auto getTakeoffCmd(){
         cmd.data.resize(15, 0.0);
         cmd.data[13] = 22;
         cmd.data[14] = 1;
-        return returnCmd();
+        return getCmd();
     }
     auto getLandCmd(){
         cmd.data.resize(15, 0.0);
         cmd.data[13] = 22;
         cmd.data[14] = 16;
-        return returnCmd();
+        return getCmd();
     }
     auto getLockCmd(){
         cmd.data.resize(15, 0.0);
         cmd.data[13] = 22;
         cmd.data[14] = 40;
-        return returnCmd();
+        return getCmd();
     }
 private:
     std_msgs::Float32MultiArray cmd;
