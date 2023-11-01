@@ -224,10 +224,10 @@ public:
 
     void setPositionOffset() {
 #ifdef GPS_POS
-        printf("GPS Position: %s", outputStr(fc.currentGPS).c_str());
+        printf("GPS Position: %s", outputStr(currentGPS).c_str());
 #endif
 #ifdef UWB_POS
-        printf("UWB Position: %s", outputStr(fc.currentPosUWB).c_str());
+        printf("UWB Position: %s", outputStr(currentPosUWB).c_str());
 #endif
         setValue(positionOffset, currentPos);
         printf("Position offset ENU / m: %s", outputStr(positionOffset).c_str());

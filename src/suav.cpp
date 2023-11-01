@@ -59,10 +59,10 @@ public:
         printf("Yaw offset / Deg: %.2lf", fc.yawOffsetDeg);
 
         holdYawsDeg = {
-                degreeRound0to360(fc.yawOffsetDeg + 0),
-                degreeRound0to360(fc.yawOffsetDeg + 90),
-                degreeRound0to360(fc.yawOffsetDeg + 180),
-                degreeRound0to360(fc.yawOffsetDeg + 270)
+                degreeRound0To360(fc.yawOffsetDeg + 0),
+                degreeRound0To360(fc.yawOffsetDeg + 90),
+                degreeRound0To360(fc.yawOffsetDeg + 180),
+                degreeRound0To360(fc.yawOffsetDeg + 270)
         };
 
         for (int i = 0; i < 100; i++) {
@@ -70,10 +70,10 @@ public:
             rate.sleep();
         }
 
-        fc.setPositonOffset();
+        fc.setPositionOffset();
         printf("Position offset ENU / m: %s", outputStr(fc.positionOffset).c_str());
 
-        holdPoint1 = compansatePositionOffset(newPoint(0, 3, 100.0));
+        holdPoint1 = fc.compansatePositionOffset(newPoint(0, 3, 100.0));
         holdPoints = {holdPoint1, holdPoint1, holdPoint1, holdPoint1};
         holdTimes = {10, 10, 10, 10};
         
@@ -135,7 +135,7 @@ public:
     }
 
     int taskStateEncoder() const{
-        return taskState * 10 + ((taskState == HOLD)? holdCnt: 0)));
+        return taskState * 10 + ((taskState == HOLD)? holdCnt: 0);
     }
 
     void toStepTakeoff(){
@@ -199,9 +199,9 @@ public:
 
     void StepPrepare() {
         printf("###----StepPrepare----###");
-        printf("Prepare to %d/%d point", holdCnt + 1, holdPoints.size());
+        printf("Prepare to %ld/%ld point", holdCnt + 1, holdPoints.size());
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
-        if (fc.isNear(fc.currentPos, desiredPoint, 1.0) && fc.yawNearDeg(desiredYawDeg, 5.0)){
+        if (fc.isNear(desiredPoint, 1.0) && fc.yawNearDeg(desiredYawDeg, 5.0)){
             toStepHold();
         }
     }
@@ -209,7 +209,7 @@ public:
     void StepHold() {
         printf("###----StepHold----###");
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
-        if (fc.enoughTimeAfter(holdBeginTime, holdTime) && searchOver){
+        if (toc - tic >= holdTimes[holdCnt] && searchOver){
             holdCnt++;
             if (holdCnt >= holdPoints.size()) {
                 toStepBack();
@@ -274,7 +274,7 @@ public:
             // std::cout << "\033c" << std::flush;
             taskTime = fc.getTimeNow() - taskBeginTime;
             printf("-----------");
-            printf("Task time: %.2lf, State time", taskTime, toc - tic);
+            printf("Task time: %.2lf, State time: %.2lf", taskTime, toc - tic);
             printf("suav (State: %d) @ %s", taskState, outputStr(fc.currentPos).c_str());
             printf("Desired Point: %s\n", outputStr(desiredPoint).c_str());
             printf("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg", fc.currentRPYDeg.x, fc.currentRPYDeg.y, fc.currentRPYDeg.z);
