@@ -73,7 +73,7 @@ public:
         fc.setPositionOffset();
         printf("Position offset ENU / m: %s", outputStr(fc.positionOffset).c_str());
 
-        holdPoint1 = fc.compansatePositionOffset(newPoint(0, 3, 100.0));
+        holdPoint1 = fc.compensatePositionOffset(newPoint(0, 3, 100.0));
         holdPoints = {holdPoint1, holdPoint1, holdPoint1, holdPoint1};
         holdTimes = {10, 10, 10, 10};
         
