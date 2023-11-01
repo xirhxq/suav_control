@@ -4,7 +4,16 @@
 #define X_KP KP
 #define Y_KP KP
 #define Z_KP KP
-#define YAW_KP 1.0 
+#define YAW_KP 1.0
+
+#define UWB_POS
+//#define GPS_POS
+
+#if defined(UWB_POS) && defined(GPS_POS)
+#error "UWB_POS and GPS_POS cannot be defined at the same time"
+#elif !defined(UWB_POS) && !defined(GPS_POS)
+#error "UWB_POS and GPS_POS must be defined at least one"
+#endif
 
 class XY_CMD {
 private:
@@ -136,13 +145,15 @@ private:
 public:
     double currentHorMode, currentVerMode, currentYawMode;
 
-    geometry_msgs::Vector3 currentRPYRad, currentRPYDeg;
+    Point currentRPYRad, currentRPYDeg;
 
-    geometry_msgs::Vector3 currentPosXY;
+    Point currentPosXY;
 
-    geometry_msgs::Vector3 currentPos;
+    Point currentPos;
 
-    geometry_msgs::Vector3 currentVelENU;
+    Point currentPosUWB;
+
+    Point currentVelENU;
 
     double currentBaroHeight;
 
@@ -185,6 +196,9 @@ public:
         currentPosXY.x = msgs.data[10];
         currentPosXY.y = msgs.data[11];
         currentPosXY.z = msgs.data[12];
+#ifdef GPS_POS
+        setValue(currentPos, currentPosXY);
+#endif
 
         currentRPYRad.x = msgs.data[13];
         currentRPYRad.y = msgs.data[14];
@@ -202,13 +216,32 @@ public:
     }
 
     void locCallback(const nav_msgs::Odometry::ConstPtr& msg){
-        setValue(currentPos, msg->pose.pose.position);
+        setValue(currentPosUWB, msg->pose.pose.position);
+#ifdef UWB_POS
+        setValue(currentPos, currentPosUWB);
+#endif
+    }
+
+    void setPositionOffset() {
+#ifdef GPS_POS
+        printf("GPS Position: %s", outputStr(fc.currentGPS).c_str());
+#endif
+#ifdef UWB_POS
+        printf("UWB Position: %s", outputStr(fc.currentPosUWB).c_str());
+#endif
+        setValue(positionOffset, currentPos);
+        printf("Position offset ENU / m: %s", outputStr(positionOffset).c_str());
     }
 
     Point compensatePositionOffset(Point _p){
         Point res;
+#ifdef GPS_POS
         res.x = _p.x + positionOffset.x;
         res.y = _p.y + positionOffset.y;
+#else
+        res.x = _p.x;
+        res.y = _p.y;
+#endif
         res.z = _p.z;
         return res;
     }
@@ -247,6 +280,10 @@ public:
     template<typename T>
     bool isNear2d(T a, double r){
         return dis2d(a, currentPos) <= r;
+    }
+
+    bool yawNearDeg(double yawDeg, double tol=5.0) {
+        return fabs(degreeRound(yawDeg - currentRPYDeg.z)) <= tol;
     }
 
     void uavSpin() {
