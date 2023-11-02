@@ -6,8 +6,8 @@
 #define Z_KP KP
 #define YAW_KP 1.0
 
-#define UWB_POS
-//#define GPS_POS
+// #define UWB_POS
+#define GPS_POS
 
 #if defined(UWB_POS) && defined(GPS_POS)
 #error "UWB_POS and GPS_POS cannot be defined at the same time"
@@ -251,7 +251,7 @@ public:
 
     void setPositionOffset() {
 #ifdef GPS_POS
-        printf("GPS Position: %s\n", outputStr(currentGPS).c_str());
+        printf("GPS Position: %s\n", outputStr(currentPosXY).c_str());
 #endif
 #ifdef UWB_POS
         printf("UWB Position: %s\n", outputStr(currentPosUWB).c_str());
