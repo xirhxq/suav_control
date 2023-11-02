@@ -15,6 +15,9 @@
 #error "UWB_POS and GPS_POS must be defined at least one"
 #endif
 
+typedef std::map<int, std::string> mapIntToString;
+typedef std::map<int, std::vector<int>> mapIntToVectorInt;
+
 class XY_CMD {
 private:
     double eVelSat = 0.5, nVelSat = 0.5, uVelSat = 2;
@@ -22,6 +25,17 @@ private:
     double pRadSat = pDegSat * DEG2RAD_COE, rRadSat = rDegSat * DEG2RAD_COE;
     double fAccSat = 0.2, lAccSat = 0.2, uAccSat = 0.2;
     double yawRateDegSat = 20;
+    
+    mapIntToString horModeDict = {{0, "Off"}, {1, "Pos"}, {2, "Velo"}, {3, "Atti"}};
+    mapIntToVectorInt horIndexDict = {{0, {}}, {1, {3, 4}}, {2, {6, 7}}, {3, {10, 11}}};
+    mapIntToString horUnitDict = {{0, ""}, {1, "m"}, {2, "m/s"}, {3, "rad"}};
+    mapIntToString verModeDict = {{0, "Off"}, {1, "Pos"}, {2, "Velo"}};
+    mapIntToVectorInt verIndexDict = {{0, {}}, {1, {5}}, {2, {8}}};
+    mapIntToString verUnitDict = {{0, ""}, {1, "m"}, {2, "m/s"}};
+    mapIntToString yawModeDict = {{0, "Off"}, {1, "Yaw"}, {2, "None"}, {3, "YawRate"}};
+    mapIntToVectorInt yawIndexDict = {{0, {}}, {1, {9}}, {2, {}}, {3, {9}}};
+    mapIntToString yawUnitDict = {{0, ""}, {1, "rad"}, {2, ""}, {3, "deg/s"}};
+
     void setHorPosition(double ePos, double nPos) {
         cmd.data[0] = 1;
         cmd.data[3] = ePos;
@@ -38,12 +52,6 @@ private:
         cmd.data[0] = 3;
         cmd.data[10] = LimitValue(radRound(pRad), pRadSat);
         cmd.data[11] = LimitValue(radRound(rRad), rRadSat);
-        cmd.data[13] = 11;
-    }
-    void setHorAcceleration(double fAcc, double lAcc) {
-        cmd.data[0] = 4;
-        cmd.data[6] = LimitValue(fAcc, fAccSat);
-        cmd.data[7] = LimitValue(lAcc, lAccSat);
         cmd.data[13] = 11;
     }
     void setVerPosition(double uPos) {
@@ -66,12 +74,31 @@ private:
         cmd.data[9] = LimitValue(yawRateDeg, yawRateDegSat);
         cmd.data[13] = 11;
     }
-    auto getCmd() {
-        printf("CMD: ");
-        for (auto a: cmd.data) {
-            printf("%.2f ", a);
+    auto outputCmd() {
+        int horMode = cmd.data[0], verMode = cmd.data[1], yawMode = cmd.data[2];
+        printf("Hor %s, data: ", horModeDict[horMode].c_str());
+        for (auto index: horIndexDict[horMode]) {
+            printf("%.2lf %s ", cmd.data[index], horUnitDict[horMode].c_str());
         }
         printf("\n");
+        printf("Ver %s, data: ", verModeDict[verMode].c_str());
+        for (auto index: verIndexDict[verMode]) {
+            printf("%.2lf %s ", cmd.data[index], verUnitDict[verMode].c_str());
+        }
+        printf("\n");
+        printf("Yaw %s, data: ", yawModeDict[yawMode].c_str());
+        for (auto index: yawIndexDict[yawMode]) {
+            printf("%.2lf %s ", cmd.data[index], yawUnitDict[yawMode].c_str());
+        }
+        printf("\n");
+    }
+    auto getCmd() {
+        // printf("CMD: ");
+        // for (auto a: cmd.data) {
+        //     printf("%.2f ", a);
+        // }
+        // printf("\n");
+        outputCmd();
         return cmd;
     }
 public:
