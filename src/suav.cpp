@@ -63,10 +63,10 @@ public:
         printf("Yaw offset / Deg: %.2lf\n", fc.yawOffsetDeg);
 
         holdYawsDeg = {
-                degreeRound0To360(fc.yawOffsetDeg + 0),
-                degreeRound0To360(fc.yawOffsetDeg + 90),
-                degreeRound0To360(fc.yawOffsetDeg + 180),
-                degreeRound0To360(fc.yawOffsetDeg + 270)
+                degreeRound0To360(fc.yawOffsetDeg + 0)
+       //         degreeRound0To360(fc.yawOffsetDeg + 90),
+       //         degreeRound0To360(fc.yawOffsetDeg + 180),
+       //         degreeRound0To360(fc.yawOffsetDeg + 270)
         };
 
         for (int i = 0; i < 100; i++) {
@@ -77,11 +77,11 @@ public:
         fc.setPositionOffset();
         printf("Position offset ENU / m: %s\n", outputStr(fc.positionOffset).c_str());
 
-        holdPoint1 = fc.compensatePositionOffset(newPoint(0, 0, 1.0));
-        backPoint1 = fc.compensatePositionOffset(newPoint(0, 0, 0.5));
+        holdPoint1 = fc.compensatePositionOffset(newPoint(8, 4, 4.0));
+        backPoint1 = fc.compensatePositionOffset(newPoint(8, 4, 0.5));
         
-        holdPoints = {holdPoint1, holdPoint1, holdPoint1, holdPoint1};
-        holdTimes = {10, 10, 10, 10};
+        holdPoints = {holdPoint1};
+        holdTimes = {10};
         
         printf("Hold Trajectory: \n");
         for (int i = 0; i < holdPoints.size(); i++) {
@@ -107,7 +107,8 @@ public:
             {"stateNumber", "int"},
             {"posENU", "Point"},
             {"rpyDeg", "Point"},
-            {"desiredPoint", "point"}
+            {"desiredPoint", "point"},
+            {"desiredYawDeg", "double"}
         };
         dl.initialize(vn);
 
@@ -307,6 +308,7 @@ public:
             dl.log("posENU", fc.currentPos);
             dl.log("rpyDeg", fc.currentRPYDeg);
             dl.log("desiredPoint", desiredPoint);
+            dl.log("desiredYawDeg", desiredYawDeg);
             dl.newline();
             
             ros::spinOnce();

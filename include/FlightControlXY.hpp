@@ -6,8 +6,8 @@
 #define Z_KP KP
 #define YAW_KP 1.0
 
-// #define UWB_POS
-#define GPS_POS
+#define UWB_POS
+//#define GPS_POS
 
 #if defined(UWB_POS) && defined(GPS_POS)
 #error "UWB_POS and GPS_POS cannot be defined at the same time"
