@@ -22,33 +22,38 @@
         Eigen::VectorXd b(3);
         Eigen::VectorXi c(3);
 
+    # Step 1: declare
         DataLogger logger("data.csv"); // will add time stamp in the filename
 
-        std::vector<std::pair<std::string, std::string>> variableInfo;
+    # Step 2: simplest way to declare variable info
+        std::vector<std::pair<std::string, std::string> > variableInfo = {
+            {"var1", "int"},
+            {"var2", "double"},
+            {"flag", "bool"},
+            {"state", "enum"},
+            {"a[3][2]", "EigenMatrix"},
+            {"b[3][1]", "EigenVector"},
+            {"c[" + std::to_string(c.rows()) + "][" + std::to_string(c.cols()) + "]", "EigenVector"},
+            {"point", "Point"},
+            {"array[3]", "array"},
+            {"anotherArray[3-5]", "array"},
+            {"array2[1-4]", "vector"},
+        };
 
-        // for primitive type
-        variableInfo.emplace_back("var1", "int");
+    # Step 2(alternative): or you can declare variable info one by one
+        variableInfo.emplace_back("var1", "int");       // for primitive type
         variableInfo.emplace_back("var2", "double");
         variableInfo.emplace_back("flag", "bool");
         variableInfo.emplace_back("state", "enum");
-
-        // for eigen matrix or vector you should specify the size
-        variableInfo.emplace_back("a[3][2]", "EigenMatrix");
+        variableInfo.emplace_back("a[3][2]", "EigenMatrix"); // for eigen matrix or vector you should specify the size
         variableInfo.emplace_back("b[3][1]", "EigenVector");
-
-        // also recommend to use .rows() and .cols()
-        variableInfo.emplace_back("c[" + std::to_string(c.rows()) + "][" + std::to_string(c.cols()) + "]", "EigenVector");
-
-        // for any type with .x .y .z members
-        variableInfo.emplace_back("point", "Point");
-
-        // for array you should specify the size
-        variableInfo.emplace_back("array[3]", "array"); // start from 0, length 3
+        variableInfo.emplace_back("c[" + std::to_string(c.rows()) + "][" + std::to_string(c.cols()) + "]", "EigenVector"); // also recommend to use .rows() and .cols()
+        variableInfo.emplace_back("point", "Point"); // for any type with .x .y .z members
+        variableInfo.emplace_back("array[3]", "array"); // for array you should specify the size, start from 0, length 3
         variableInfo.emplace_back("anotherArray[3-5]", "array"); // start from 3, length 2
+        variableInfo.emplace_back("array2[1-4]", "vector"); // vector support
 
-        // vector support
-        variableInfo.emplace_back("array2[1-4]", "vector");
-
+    # Step 3: initialize logger
         logger.initialize(variableInfo);
 
         for (int i = 0; i < 10; ++i) {
@@ -62,6 +67,7 @@
             bool flag = i % 2;
             std::vector<double> array2 = {0, 1.0 * i, 2.0 * i, 3.0 * i};
 
+    # Step 4: log ALL values, don't forget any variable
             logger.log("var1", var1);
             logger.log("var2", var2);
             logger.log("state", e);
@@ -78,7 +84,7 @@
             logger.log("point", point);
             logger.log("array2", array2);
 
-            // call .newline() to record values in file
+    # Step 5: call .newline() to record values in file, remember to call it at the end of each loop
             logger.newline();
         }
     }
