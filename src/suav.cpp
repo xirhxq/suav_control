@@ -20,7 +20,7 @@ private:
     } ControlState;
     ControlState taskState;
 
-    Point holdPoint1, backPoint1;
+    Point holdPoint1, holdPoint2, holdPoint3, backPoint1;
     
     vector<Point> holdPoints;
     vector<double> holdYawsDeg;
@@ -63,10 +63,11 @@ public:
         printf("Yaw offset / Deg: %.2lf\n", fc.yawOffsetDeg);
 
         holdYawsDeg = {
+                degreeRound0To360(fc.yawOffsetDeg + 0),
+                degreeRound0To360(fc.yawOffsetDeg + 0),
                 degreeRound0To360(fc.yawOffsetDeg + 0)
-       //         degreeRound0To360(fc.yawOffsetDeg + 90),
-       //         degreeRound0To360(fc.yawOffsetDeg + 180),
-       //         degreeRound0To360(fc.yawOffsetDeg + 270)
+//                degreeRound0To360(fc.yawOffsetDeg + 270),
+//                degreeRound0To360(fc.yawOffsetDeg + 0)
         };
 
         for (int i = 0; i < 100; i++) {
@@ -77,11 +78,14 @@ public:
         fc.setPositionOffset();
         printf("Position offset ENU / m: %s\n", outputStr(fc.positionOffset).c_str());
 
-        holdPoint1 = fc.compensatePositionOffset(newPoint(8, 4, 4.0));
-        backPoint1 = fc.compensatePositionOffset(newPoint(8, 4, 0.5));
+        holdPoint1 = fc.compensatePositionOffset(newPoint(-9.63, 1.80, 4.0));
+        holdPoint2 = fc.compensatePositionOffset(newPoint(-9.63, -3.80, 4.0));
+        holdPoint3 = fc.compensatePositionOffset(newPoint(-9.63, 1.80, 4.0));
+
+        backPoint1 = fc.compensatePositionOffset(newPoint(-9.63, 1.80, 0.5));
         
-        holdPoints = {holdPoint1};
-        holdTimes = {10};
+        holdPoints = {holdPoint1, holdPoint2, holdPoint3};
+        holdTimes = {5, 5, 5};
         
         printf("Hold Trajectory: \n");
         for (int i = 0; i < holdPoints.size(); i++) {
