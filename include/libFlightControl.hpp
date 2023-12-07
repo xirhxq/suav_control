@@ -449,6 +449,26 @@ namespace {
     uint32_t decodeUint8(std::vector<uint8_t> &v, int pos){
         return (v[pos] << 16) + (v[pos + 1] << 8) + v[pos + 2];
     }
+
+    std::vector<Point> generateSmoothPath(Point start, Point end, int numPoints) {
+        std::vector<Point> pathPoints;
+        
+        double stepX = (end.x - start.x) / (numPoints + 1);
+        double stepY = (end.y - start.y) / (numPoints + 1);
+        double stepZ = (end.z - start.z) / (numPoints + 1);
+
+        for (int i = 0; i < numPoints; ++i) {
+            Point intermediatePoint;
+            intermediatePoint.x = start.x + stepX * (i + 1);
+            intermediatePoint.y = start.y + stepY * (i + 1);
+            intermediatePoint.z = start.z + stepZ * (i + 1);
+            pathPoints.push_back(intermediatePoint);
+        }
+
+        return pathPoints;
+    }
+
+
 }
 
 

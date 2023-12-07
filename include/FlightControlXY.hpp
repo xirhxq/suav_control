@@ -276,6 +276,10 @@ public:
         return res;
     }
 
+    Point positionOffsetPoint(double x, double y, double z) {
+        return compensatePositionOffset(newPoint(x, y, z));
+    }
+
     Point compensateOffset(Point _p){
         Point res;
         res.x = _p.x * cos(yawOffsetDeg) - _p.y * sin(yawOffsetDeg) + positionOffset.x;

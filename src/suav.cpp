@@ -23,6 +23,12 @@ private:
     // Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, holdPoint6, holdPoint7, holdPoint8, holdPoint9, holdPoint10, holdPoint11, holdPoint12, backPoint1;
     Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, backPoint1;
 
+    vector<Point> ascendPoints;
+    size_t ascendCnt;
+
+    vector<Point> backPoints;
+    size_t backCnt;
+
     vector<Point> holdPoints;
     vector<double> holdYawsDeg;
     vector<double> holdTimes;
@@ -72,6 +78,30 @@ public:
 
         fc.yawOffsetDeg = fc.currentRPYDeg.z;
         printf("Yaw offset / Deg: %.2lf\n", fc.yawOffsetDeg);
+
+        ascendPoints = generateSmoothPath(
+            positionOffsetPoint(0, 0, 5),
+            positionOffsetPoint(100, 0, 40),
+            5
+        );
+
+        printf("Ascend Points: \n");
+        for (auto p: ascendPoints) {
+            cout << outputStr(p) << endl;
+        }
+        printf("\n");
+
+        backPoints = generateSmoothPath(
+            positionOffsetPoint(100, 0, 40),
+            positionOffsetPoint(0, 0, 5),
+            5
+        );
+
+        printf("Back Points: \n");
+        for (auto p: backPoints) {
+            cout << outputStr(p) << endl;
+        }
+        printf("\n");
 
         holdYawsDeg = {
                 // degreeRound0To360(fc.yawOffsetDeg + 0),
@@ -202,7 +232,8 @@ public:
 
     void toStepAscend(){
         taskState = ASCEND;
-        desiredPoint = holdPoint1;
+        ascendCnt = 0;
+        desiredPoint = ascendPoint[ascendCnt];
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
     }
@@ -224,7 +255,8 @@ public:
 
     void toStepBack(){
         taskState = BACK;
-        desiredPoint = backPoint1;
+        backCnt = 0;
+        desiredPoint = backPoint[backCnt];
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
     }
@@ -252,9 +284,13 @@ public:
 
     void StepAscend() {
         printf("----StepAscend----\n");
+        desiredPoint = ascendPoints[ascendCnt];
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
-        if (nearlyIs(fc.currentPos.z, desiredPoint.z, 1.0)){
-            toStepPrepare(true);
+        if (fc.isNear(desiredPoint, 1.0)){
+            ascendCnt++;
+            if (ascendCnt == ascendPoints.size()){
+                toStepPrepare(true);
+            }
         }
     }
 
@@ -284,9 +320,13 @@ public:
 
     void StepBack() {
         printf("----StepBack----\n");
+        desiredPoint = backPoints[backCnt];
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
-        if (nearlyIs(fc.currentPos.z, desiredPoint.z, 1.0)){
-            toStepLand();
+        if (fc.isNear(desiredPoint, 1.0)){
+            backCnt++;
+            if (backCnt == backPoints.size()){
+                toStepLand();
+            }
         }
     }
 
