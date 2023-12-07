@@ -154,6 +154,7 @@ public:
             {"taskTime", "double"},
             {"state", "enum"},
             {"stateNumber", "int"},
+            {"stateTime", "double"},
             {"posENU", "Point"},
             {"rpyDeg", "Point"},
             {"desiredPoint", "point"},
@@ -230,10 +231,12 @@ public:
 
     void toStepLand(){
         taskState = LAND;
+        tic = fc.getTimeNow();
     }
 
     void toStepEnd() {
         taskState = END;
+        tic = fc.getTimeNow();
     }
 
     void StepTakeoff() {
@@ -354,6 +357,7 @@ public:
             dl.log("taskTime", taskTime);
             dl.log("state", taskState);
             dl.log("stateNumber", taskStateEncoder());
+            dl.log("stateTime", toc - tic);
             dl.log("posENU", fc.currentPos);
             dl.log("rpyDeg", fc.currentRPYDeg);
             dl.log("desiredPoint", desiredPoint);
