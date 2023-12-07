@@ -20,7 +20,7 @@ typedef std::map<int, std::vector<int>> mapIntToVectorInt;
 
 class XY_CMD {
 private:
-    double eVelSat = 0.5, nVelSat = 0.5, uVelSat = 2;
+    double eVelSat = 2.0, nVelSat = 10.0, uVelSat = 2;
     double pDegSat = 5, rDegSat = 5;
     double pRadSat = pDegSat * DEG2RAD_COE, rRadSat = rDegSat * DEG2RAD_COE;
     double fAccSat = 0.2, lAccSat = 0.2, uAccSat = 0.2;
@@ -199,6 +199,8 @@ public:
 
     bool EMERGENCY = false;
 
+    bool is_flight_state_updated = false;
+
     FLIGHT_CONTROL(std::string uavName, ros::NodeHandle nh_): nh(nh_){
         flightDataSub = nh.subscribe(uavName + "/xy_fcu/flight_data", 10, &FLIGHT_CONTROL::flightDataCallback, this);
         ctrlCmdPub = nh.advertise<std_msgs::Float32MultiArray>(uavName + "/xy_fcu/xy_cmd", 10);
@@ -206,6 +208,7 @@ public:
     }
 
     void flightDataCallback(const std_msgs::Float32MultiArray &msgs) {
+        is_flight_state_updated = true;
         currentHorMode = msgs.data[0];
         currentVerMode = msgs.data[1];
         currentYawMode = msgs.data[2];
@@ -266,8 +269,8 @@ public:
         res.x = _p.x + positionOffset.x;
         res.y = _p.y + positionOffset.y;
 #else
-        res.x = _p.x;
-        res.y = _p.y;
+        res.x = _p.x + positionOffset.x;
+        res.y = _p.y + positionOffset.y;
 #endif
         res.z = _p.z;
         return res;

@@ -20,8 +20,9 @@ private:
     } ControlState;
     ControlState taskState;
 
-    Point holdPoint1, holdPoint2, holdPoint3, backPoint1;
-    
+    // Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, holdPoint6, holdPoint7, holdPoint8, holdPoint9, holdPoint10, holdPoint11, holdPoint12, backPoint1;
+    Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, backPoint1;
+
     vector<Point> holdPoints;
     vector<double> holdYawsDeg;
     vector<double> holdTimes;
@@ -54,15 +55,35 @@ public:
         uavStatePub = nh_.advertise<std_msgs::Int8>(name + "/uavState", 1);
         searchStateSub = nh_.subscribe(name + "/pod/searchState", 1, &TASK::searchStateCallback, this);
 
-        for (int i = 0; i < 100; i++) {
+        // for (int i = 0; i < 100; i++) {
+        //     ros::spinOnce();
+        //     rate.sleep();
+        // }
+        while(true)
+        {
+            printf("callback state: %d\n", fc.is_flight_state_updated);
+            printf("Yaw offset / Deg: %.2lf\n", fc.yawOffsetDeg);
+            if(fc.is_flight_state_updated == true)
+                break;
             ros::spinOnce();
             rate.sleep();
         }
+
 
         fc.yawOffsetDeg = fc.currentRPYDeg.z;
         printf("Yaw offset / Deg: %.2lf\n", fc.yawOffsetDeg);
 
         holdYawsDeg = {
+                // degreeRound0To360(fc.yawOffsetDeg + 0),
+                // degreeRound0To360(fc.yawOffsetDeg + 0),
+                // degreeRound0To360(fc.yawOffsetDeg + 0),
+                // degreeRound0To360(fc.yawOffsetDeg + 0),
+                // degreeRound0To360(fc.yawOffsetDeg + 0),
+                // degreeRound0To360(fc.yawOffsetDeg + 0),
+                // degreeRound0To360(fc.yawOffsetDeg + 0),
+
+                degreeRound0To360(fc.yawOffsetDeg + 0),
+                degreeRound0To360(fc.yawOffsetDeg + 0),
                 degreeRound0To360(fc.yawOffsetDeg + 0),
                 degreeRound0To360(fc.yawOffsetDeg + 0),
                 degreeRound0To360(fc.yawOffsetDeg + 0)
@@ -78,14 +99,38 @@ public:
         fc.setPositionOffset();
         printf("Position offset ENU / m: %s\n", outputStr(fc.positionOffset).c_str());
 
-        holdPoint1 = fc.compensatePositionOffset(newPoint(-9.63, 1.80, 4.0));
-        holdPoint2 = fc.compensatePositionOffset(newPoint(-9.63, -3.80, 4.0));
-        holdPoint3 = fc.compensatePositionOffset(newPoint(-9.63, 1.80, 4.0));
+        /*
+        // forward
+        holdPoint1 = fc.compensatePositionOffset(newPoint(0, 0, 5.0));
+        holdPoint2 = fc.compensatePositionOffset(newPoint(0, -10.0, 5.0));
+        holdPoint3 = fc.compensatePositionOffset(newPoint(0, -10.0, 10.0));
+        holdPoint4 = fc.compensatePositionOffset(newPoint(0, -20.0, 10.0));
+        holdPoint5 = fc.compensatePositionOffset(newPoint(0, -20.0, 15.0));
 
-        backPoint1 = fc.compensatePositionOffset(newPoint(-9.63, 1.80, 0.5));
+        // trajectory
+        holdPoint6 = fc.compensatePositionOffset(newPoint(0, -100.0, 15.0));
+        holdPoint7 = fc.compensatePositionOffset(newPoint(0, -200.0, 15.0));
+        holdPoint8 = fc.compensatePositionOffset(newPoint(0, -340.0, 15.0));
+
+        // backword
+        holdPoint9 = fc.compensatePositionOffset(newPoint(0, -100, 15.0));
+        holdPoint10 = fc.compensatePositionOffset(newPoint(0, -30.0, 15.0));
+        holdPoint11 = fc.compensatePositionOffset(newPoint(0, 0.0, 15.0));
+        holdPoint12 = fc.compensatePositionOffset(newPoint(0, 0, 5.0));
+        */
+        holdPoint1 = fc.compensatePositionOffset(newPoint(0, 0, 5.0));
+        holdPoint2 = fc.compensatePositionOffset(newPoint(0, 0, 15.0));
+        holdPoint3 = fc.compensatePositionOffset(newPoint(0, -50, 15.0));
+
+        holdPoint4 = fc.compensatePositionOffset(newPoint(0, 0, 15.0));
+        holdPoint5 = fc.compensatePositionOffset(newPoint(0, 0, 5.0));
+
+        backPoint1 = fc.compensatePositionOffset(newPoint(0, 0, 0.5));
         
-        holdPoints = {holdPoint1, holdPoint2, holdPoint3};
-        holdTimes = {5, 5, 5};
+        // holdPoints = {holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, holdPoint6, holdPoint7, holdPoint8, holdPoint9, holdPoint10, holdPoint11, holdPoint12};
+        // holdTimes = {5, 5, 5, 5, 10, 10, 10, 120, 10, 10, 5, 10};
+        holdPoints = {holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5};
+        holdTimes = {5, 5, 20, 5, 10};
         
         printf("Hold Trajectory: \n");
         for (int i = 0; i < holdPoints.size(); i++) {
@@ -202,7 +247,7 @@ public:
     void StepAscend() {
         printf("----StepAscend----\n");
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
-        if (nearlyIs(fc.currentPos.z, desiredPoint.z, 0.1)){
+        if (nearlyIs(fc.currentPos.z, desiredPoint.z, 1.0)){
             toStepPrepare(true);
         }
     }
