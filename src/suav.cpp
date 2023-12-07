@@ -65,7 +65,7 @@ public:
         //     ros::spinOnce();
         //     rate.sleep();
         // }
-        while(true)
+        while(nh_.ok())
         {
             printf("callback state: %d\n", fc.is_flight_state_updated);
             printf("Yaw offset / Deg: %.2lf\n", fc.yawOffsetDeg);
@@ -80,8 +80,8 @@ public:
         printf("Yaw offset / Deg: %.2lf\n", fc.yawOffsetDeg);
 
         ascendPoints = generateSmoothPath(
-            positionOffsetPoint(0, 0, 5),
-            positionOffsetPoint(100, 0, 40),
+            fc.positionOffsetPoint(0, 0, 0),
+            fc.positionOffsetPoint(0, -30, 15),
             5
         );
 
@@ -92,8 +92,8 @@ public:
         printf("\n");
 
         backPoints = generateSmoothPath(
-            positionOffsetPoint(100, 0, 40),
-            positionOffsetPoint(0, 0, 5),
+            fc.positionOffsetPoint(0, -30, 15),
+            fc.positionOffsetPoint(0, 0, 2),
             5
         );
 
@@ -104,21 +104,7 @@ public:
         printf("\n");
 
         holdYawsDeg = {
-                // degreeRound0To360(fc.yawOffsetDeg + 0),
-                // degreeRound0To360(fc.yawOffsetDeg + 0),
-                // degreeRound0To360(fc.yawOffsetDeg + 0),
-                // degreeRound0To360(fc.yawOffsetDeg + 0),
-                // degreeRound0To360(fc.yawOffsetDeg + 0),
-                // degreeRound0To360(fc.yawOffsetDeg + 0),
-                // degreeRound0To360(fc.yawOffsetDeg + 0),
-
-                degreeRound0To360(fc.yawOffsetDeg + 0),
-                degreeRound0To360(fc.yawOffsetDeg + 0),
-                degreeRound0To360(fc.yawOffsetDeg + 0),
-                degreeRound0To360(fc.yawOffsetDeg + 0),
                 degreeRound0To360(fc.yawOffsetDeg + 0)
-//                degreeRound0To360(fc.yawOffsetDeg + 270),
-//                degreeRound0To360(fc.yawOffsetDeg + 0)
         };
 
         for (int i = 0; i < 100; i++) {
@@ -129,36 +115,10 @@ public:
         fc.setPositionOffset();
         printf("Position offset ENU / m: %s\n", outputStr(fc.positionOffset).c_str());
 
-        /*
-        // forward
-        holdPoint1 = fc.compensatePositionOffset(newPoint(0, 0, 5.0));
-        holdPoint2 = fc.compensatePositionOffset(newPoint(0, -10.0, 5.0));
-        holdPoint3 = fc.compensatePositionOffset(newPoint(0, -10.0, 10.0));
-        holdPoint4 = fc.compensatePositionOffset(newPoint(0, -20.0, 10.0));
-        holdPoint5 = fc.compensatePositionOffset(newPoint(0, -20.0, 15.0));
+        holdPoint1 = fc.compensatePositionOffset(newPoint(0, -50, 15.0));
 
-        // trajectory
-        holdPoint6 = fc.compensatePositionOffset(newPoint(0, -100.0, 15.0));
-        holdPoint7 = fc.compensatePositionOffset(newPoint(0, -200.0, 15.0));
-        holdPoint8 = fc.compensatePositionOffset(newPoint(0, -340.0, 15.0));
-
-        // backword
-        holdPoint9 = fc.compensatePositionOffset(newPoint(0, -100, 15.0));
-        holdPoint10 = fc.compensatePositionOffset(newPoint(0, -30.0, 15.0));
-        holdPoint11 = fc.compensatePositionOffset(newPoint(0, 0.0, 15.0));
-        holdPoint12 = fc.compensatePositionOffset(newPoint(0, 0, 5.0));
-        */
-        holdPoint1 = fc.compensatePositionOffset(newPoint(0, 0, 5.0));
-        holdPoint2 = fc.compensatePositionOffset(newPoint(0, 0, 15.0));
-        holdPoint3 = fc.compensatePositionOffset(newPoint(0, -50, 15.0));
-
-        holdPoint4 = fc.compensatePositionOffset(newPoint(0, 0, 15.0));
-        holdPoint5 = fc.compensatePositionOffset(newPoint(0, 0, 5.0));
-        
-        // holdPoints = {holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, holdPoint6, holdPoint7, holdPoint8, holdPoint9, holdPoint10, holdPoint11, holdPoint12};
-        // holdTimes = {5, 5, 5, 5, 10, 10, 10, 120, 10, 10, 5, 10};
-        holdPoints = {holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5};
-        holdTimes = {5, 5, 20, 5, 10};
+        holdPoints = {holdPoint1};
+        holdTimes = {20};
         
         printf("Hold Trajectory: \n");
         for (int i = 0; i < holdPoints.size(); i++) {

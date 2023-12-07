@@ -453,9 +453,9 @@ namespace {
     std::vector<Point> generateSmoothPath(Point start, Point end, int numPoints) {
         std::vector<Point> pathPoints;
         
-        double stepX = (end.x - start.x) / (numPoints + 1);
-        double stepY = (end.y - start.y) / (numPoints + 1);
-        double stepZ = (end.z - start.z) / (numPoints + 1);
+        double stepX = (end.x - start.x) / (numPoints);
+        double stepY = (end.y - start.y) / (numPoints);
+        double stepZ = (end.z - start.z) / (numPoints);
 
         for (int i = 0; i < numPoints; ++i) {
             Point intermediatePoint;
