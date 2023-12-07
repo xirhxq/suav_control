@@ -232,7 +232,7 @@ public:
     void toStepAscend(){
         taskState = ASCEND;
         ascendCnt = 0;
-        desiredPoint = ascendPoint[ascendCnt];
+        desiredPoint = ascendPoints[ascendCnt];
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
         fc.xyCmd.setVelSat(2, 2, 2);
@@ -258,7 +258,7 @@ public:
     void toStepBack(){
         taskState = BACK;
         backCnt = 0;
-        desiredPoint = backPoint[backCnt];
+        desiredPoint = backPoints[backCnt];
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
         fc.xyCmd.setVelSat(10, 10, 2);

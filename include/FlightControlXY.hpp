@@ -178,9 +178,10 @@ private:
     ros::Publisher ctrlCmdPub;
     ros::Subscriber flightDataSub, locSub;
     std::string cmd;
-    XY_CMD xyCmd;
 
 public:
+    XY_CMD xyCmd;
+    
     double currentHorMode, currentVerMode, currentYawMode;
 
     Point currentRPYRad, currentRPYDeg;
