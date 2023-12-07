@@ -157,6 +157,17 @@ public:
         cmd.data[14] = 40;
         return getCmd();
     }
+    void setVelSat(double newEVelSat, double newNVelSat, double newUVelSat) {
+        eVelSat = newEVelSat;
+        nVelSat = newNVelSat;
+        uVelSat = newUVelSat;
+    }
+    auto getVelSatStr() {
+        char s[50];
+        sprintf(s, "(E%.2lf, N%.2lf, U%.2lf)", eVelSat, nVelSat, uVelSat);
+        std::string res(s);
+        return res;
+    }
 private:
     std_msgs::Float32MultiArray cmd;
 };

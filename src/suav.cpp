@@ -20,8 +20,8 @@ private:
     } ControlState;
     ControlState taskState;
 
-    // Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, holdPoint6, holdPoint7, holdPoint8, holdPoint9, holdPoint10, holdPoint11, holdPoint12, backPoint1;
-    Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, backPoint1;
+    // Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, holdPoint6, holdPoint7, holdPoint8, holdPoint9, holdPoint10, holdPoint11, holdPoint12;
+    Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5;
 
     vector<Point> ascendPoints;
     size_t ascendCnt;
@@ -154,8 +154,6 @@ public:
 
         holdPoint4 = fc.compensatePositionOffset(newPoint(0, 0, 15.0));
         holdPoint5 = fc.compensatePositionOffset(newPoint(0, 0, 5.0));
-
-        backPoint1 = fc.compensatePositionOffset(newPoint(0, 0, 0.5));
         
         // holdPoints = {holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, holdPoint6, holdPoint7, holdPoint8, holdPoint9, holdPoint10, holdPoint11, holdPoint12};
         // holdTimes = {5, 5, 5, 5, 10, 10, 10, 120, 10, 10, 5, 10};
@@ -228,6 +226,7 @@ public:
         taskState = TAKEOFF;
         taskBeginTime = fc.getTimeNow();
         tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(2, 2, 0.5);
     }
 
     void toStepAscend(){
@@ -236,6 +235,7 @@ public:
         desiredPoint = ascendPoint[ascendCnt];
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(2, 2, 2);
     }
 
     void toStepPrepare(double restart=false){
@@ -246,11 +246,13 @@ public:
         desiredPoint = holdPoints[holdCnt];
         desiredYawDeg = holdYawsDeg[holdCnt];
         tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(10, 10, 2);
     }
 
     void toStepHold(){
         taskState = HOLD;
         tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(2, 2, 2);
     }
 
     void toStepBack(){
@@ -259,16 +261,19 @@ public:
         desiredPoint = backPoint[backCnt];
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(10, 10, 2);
     }
 
     void toStepLand(){
         taskState = LAND;
         tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(2, 2, 0.5);
     }
 
     void toStepEnd() {
         taskState = END;
         tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(2, 2, 0.5);
     }
 
     void StepTakeoff() {
@@ -324,6 +329,9 @@ public:
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (fc.isNear(desiredPoint, 1.0)){
             backCnt++;
+            if (backCnt != 0){
+                fc.xyCmd.setVelSat(2, 2, 2);
+            }
             if (backCnt == backPoints.size()){
                 toStepLand();
             }
@@ -384,6 +392,7 @@ public:
             printf("suav (State: %d) @ %s\n", taskState, outputStr(fc.currentPos).c_str());
             printf("Desired Point: %s\n", outputStr(desiredPoint).c_str());
             printf("Desired Yaw: %.2lf Degf\n", desiredYawDeg);
+            printf("Velocity Saturation: %s", fc.xyCmd.getVelSatStr().c_str());
             printf("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg\n", fc.currentRPYDeg.x, fc.currentRPYDeg.y, fc.currentRPYDeg.z);
             printf("Search Over: %d\n", searchOver);                        
             if (fc.EMERGENCY) {
