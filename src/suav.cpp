@@ -241,7 +241,10 @@ public:
 
     void StepTakeoff() {
         printf("----StepTakeoff----\n");
-        if (!onGround) fc.uavTakeoff();
+        if (!onGround) {
+            if (toc - tic <= 3) fc.uavSpin();
+            else fc.uavTakeoff();
+        }
         if (fc.enoughTimeAfter(taskBeginTime, 5) && fc.currentPos.z >= 0.3){
             toStepAscend();
         }
