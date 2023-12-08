@@ -20,8 +20,7 @@ private:
     } ControlState;
     ControlState taskState;
 
-    // Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5, holdPoint6, holdPoint7, holdPoint8, holdPoint9, holdPoint10, holdPoint11, holdPoint12;
-    Point holdPoint1, holdPoint2, holdPoint3, holdPoint4, holdPoint5;
+    Point holdPoint1, holdPoint2;
 
     vector<Point> ascendPoints;
     size_t ascendCnt;
@@ -79,6 +78,14 @@ public:
         fc.yawOffsetDeg = fc.currentRPYDeg.z;
         printf("Yaw offset / Deg: %.2lf\n", fc.yawOffsetDeg);
 
+        for (int i = 0; i < 100; i++) {
+            ros::spinOnce();
+            rate.sleep();
+        }
+
+        fc.setPositionOffset();
+        printf("Position offset ENU / m: %s\n", outputStr(fc.positionOffset).c_str());
+
         ascendPoints = generateSmoothPath(
             fc.positionOffsetPoint(0, 0, 0),
             fc.positionOffsetPoint(0, -30, 15),
@@ -104,21 +111,16 @@ public:
         printf("\n");
 
         holdYawsDeg = {
+                degreeRound0To360(fc.yawOffsetDeg + 0),
                 degreeRound0To360(fc.yawOffsetDeg + 0)
         };
 
-        for (int i = 0; i < 100; i++) {
-            ros::spinOnce();
-            rate.sleep();
-        }
+        
+        holdPoint1 = fc.compensatePositionOffset(newPoint(0, -200, 15.0));
+        holdPoint2 = fc.compensatePositionOffset(newPoint(0, -80, 15.0));
 
-        fc.setPositionOffset();
-        printf("Position offset ENU / m: %s\n", outputStr(fc.positionOffset).c_str());
-
-        holdPoint1 = fc.compensatePositionOffset(newPoint(0, -50, 15.0));
-
-        holdPoints = {holdPoint1};
-        holdTimes = {20};
+        holdPoints = {holdPoint1, holdPoint2};
+        holdTimes = {20, 20};
         
         printf("Hold Trajectory: \n");
         for (int i = 0; i < holdPoints.size(); i++) {
@@ -186,7 +188,7 @@ public:
         taskState = TAKEOFF;
         taskBeginTime = fc.getTimeNow();
         tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 2, 0.5);
+        fc.xyCmd.setVelSat(2, 1, 0.5);
     }
 
     void toStepAscend(){
@@ -195,7 +197,7 @@ public:
         desiredPoint = ascendPoints[ascendCnt];
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 2, 2);
+        fc.xyCmd.setVelSat(2, 1, 2);
     }
 
     void toStepPrepare(double restart=false){
@@ -206,13 +208,13 @@ public:
         desiredPoint = holdPoints[holdCnt];
         desiredYawDeg = holdYawsDeg[holdCnt];
         tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(10, 10, 2);
+        fc.xyCmd.setVelSat(2, 2, 2);
     }
 
     void toStepHold(){
         taskState = HOLD;
         tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 2, 2);
+        fc.xyCmd.setVelSat(2, 1, 2);
     }
 
     void toStepBack(){
@@ -221,19 +223,19 @@ public:
         desiredPoint = backPoints[backCnt];
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(10, 10, 2);
+        fc.xyCmd.setVelSat(2, 2, 2);
     }
 
     void toStepLand(){
         taskState = LAND;
         tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 2, 0.5);
+        fc.xyCmd.setVelSat(2, 1, 0.5);
     }
 
     void toStepEnd() {
         taskState = END;
         tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 2, 0.5);
+        fc.xyCmd.setVelSat(2, 1, 0.5);
     }
 
     void StepTakeoff() {
