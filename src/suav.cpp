@@ -33,7 +33,7 @@ private:
     vector<double> holdTimes;
     size_t holdCnt;
 
-    double tic, toc;
+    double tic, toc, prepareStateTime, backStateTime;
     double taskBeginTime, taskTime;
 
     Point desiredPoint;
@@ -111,16 +111,16 @@ public:
         printf("\n");
 
         holdYawsDeg = {
-                degreeRound0To360(fc.yawOffsetDeg + 0),
+                // degreeRound0To360(fc.yawOffsetDeg + 0),
                 degreeRound0To360(fc.yawOffsetDeg + 0)
         };
 
         
-        holdPoint1 = fc.compensatePositionOffset(newPoint(0, -200, 15.0));
-        holdPoint2 = fc.compensatePositionOffset(newPoint(0, -80, 15.0));
+        holdPoint1 = fc.compensatePositionOffset(newPoint(0, -300, 15.0));
+        // holdPoint2 = fc.compensatePositionOffset(newPoint(0, -80, 15.0));
 
-        holdPoints = {holdPoint1, holdPoint2};
-        holdTimes = {20, 20};
+        holdPoints = {holdPoint1};
+        holdTimes = {20};
         
         printf("Hold Trajectory: \n");
         for (int i = 0; i < holdPoints.size(); i++) {
@@ -208,8 +208,55 @@ public:
         desiredPoint = holdPoints[holdCnt];
         desiredYawDeg = holdYawsDeg[holdCnt];
         tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 2, 2);
+        prepareStateTime = toc - tic;
+        printf("prepareStateTime: %.2lf", prepareStateTime);
+        Point vel_design =constant_acc_to_target_point(fc.positionOffsetPoint(0, -30, 15.0), fc.positionOffsetPoint(0, -300, 15.0), fc.currentPos);
+        fc.xyCmd.setVelSat(vel_design.x, vel_design.y, vel_design.z);
+        /*
+        if(prepareStateTime < 3){
+            fc.xyCmd.setVelSat(2, 2, 2);
+        }
+        if(prepareStateTime >= 3 && prepareStateTime < 6){
+            fc.xyCmd.setVelSat(2, 5, 2);
+        }
+        if(prepareStateTime >= 6 && prepareStateTime < 9){
+            fc.xyCmd.setVelSat(2, 7, 2);
+        }
+        if(prepareStateTime >= 9){
+            fc.xyCmd.setVelSat(2, 10, 2);
+        }
+        */
     }
+
+    double norm(Point p_in)
+    {
+        return std::sqrt(p_in.x * p_in_x + p_in.y * p_in.y  + p_in.z * p_in.z);
+    }
+    Point constant_acc_to_target_point(Point start_point, Point end_point, Point now_point)
+    {
+        // Dt = 20, a = 0.5 , 100
+        double acc = 0.5;
+        double path_len = norm(start_point  - end_point);
+        double vel;
+        Point  target_vel;
+
+        if(norm(now_point - start_point) < 100) // speed up
+        {
+            vel = std::sqrt(norm(now_point - start_point) * 2  *  a);
+        }
+        if(norm(now_point - start_point)  > 100 && (norm(now_point - start_point) < (path_len - 100)))
+        {
+            vel = 10;
+        }
+        if(norm(now_point - start_point) > (path_len - 100)) // speed down
+        {
+            vel = std::sqrt(norm(now_point - end_point) * 2  *  a);
+        }
+        target_vel = vel * (end_point - now_point)/norm(end_point - now_point);
+        return target_vel;
+    }
+
+
 
     void toStepHold(){
         taskState = HOLD;
@@ -223,7 +270,12 @@ public:
         desiredPoint = backPoints[backCnt];
         desiredYawDeg = fc.yawOffsetDeg;
         tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 2, 2);
+        backStateTime = toc - tic;
+        printf("backStateTime: %.2lf", backStateTimeStateTime);
+        Point vel_design =constant_acc_to_target_point(fc.positionOffsetPoint(0, -300, 15.0), fc.positionOffsetPoint(0, -30, 15.0), fc.currentPos);
+        fc.xyCmd.setVelSat(vel_design.x, vel_design.y, vel_design.z);
+        // fc.xyCmd.setVelSat(2, 2, 2);
+
     }
 
     void toStepLand(){
