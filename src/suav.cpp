@@ -210,21 +210,6 @@ public:
         tic = fc.getTimeNow();
         prepareStateTime = toc - tic;
         printf("prepareStateTime: %.2lf", prepareStateTime);
-        
-        /*
-        if(prepareStateTime < 3){
-            fc.xyCmd.setVelSat(2, 2, 2);
-        }
-        if(prepareStateTime >= 3 && prepareStateTime < 6){
-            fc.xyCmd.setVelSat(2, 5, 2);
-        }
-        if(prepareStateTime >= 6 && prepareStateTime < 9){
-            fc.xyCmd.setVelSat(2, 7, 2);
-        }
-        if(prepareStateTime >= 9){
-            fc.xyCmd.setVelSat(2, 10, 2);
-        }
-        */
     }
 
     Point minus(Point point_0, Point point_1)
@@ -326,7 +311,7 @@ public:
         printf("Prepare to %ld/%ld point\n", holdCnt + 1, holdPoints.size());
         Point vel_design =constant_acc_to_target_point(fc.positionOffsetPoint(0, -30, 15.0), fc.positionOffsetPoint(0, -300, 15.0), fc.currentPos);
         fc.xyCmd.setVelSat(vel_design.x, vel_design.y, vel_design.z);
-        printf("prepare_vel_design.x: %.2f, prepare_vel_design.y: %.2f, prepare_vel_design.z: %.2f\n", vel_design.x, vel_design.y, vel_design.z);
+        printf("prepare_vel.x: %.2f, prepare_vel.y: %.2f, prepare_vel.z: %.2f\n", vel_design.x, vel_design.y, vel_design.z);
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (fc.isNear(desiredPoint, 1.0) && fc.yawNearDeg(desiredYawDeg, 5.0)){
             toStepHold();
@@ -353,7 +338,7 @@ public:
         desiredPoint = backPoints[backCnt];
         Point vel_design =constant_acc_to_target_point(fc.positionOffsetPoint(0, -300, 15.0), fc.positionOffsetPoint(0, -30, 15.0), fc.currentPos);
         fc.xyCmd.setVelSat(vel_design.x, vel_design.y, vel_design.z);
-        printf("back_vel_design.x: %.2f, back_vel_design.y: %.2f, back_vel_design.z: %.2f\n", vel_design.x, vel_design.y, vel_design.z);
+        printf("back_vel.x: %.2f, back_vel.y: %.2f, back_vel.z: %.2f\n", vel_design.x, vel_design.y, vel_design.z);
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (fc.isNear(desiredPoint, 1.0)){
             backCnt++;
@@ -420,7 +405,8 @@ public:
             printf("suav (State: %d) @ %s\n", taskState, outputStr(fc.currentPos).c_str());
             printf("Desired Point: %s\n", outputStr(desiredPoint).c_str());
             printf("Desired Yaw: %.2lf Degf\n", desiredYawDeg);
-            printf("Velocity Saturation: %s", fc.xyCmd.getVelSatStr().c_str());
+            printf("Desired Point: %s\n", outputStr(desiredPoint).c_str());
+            printf("Current Velocity ENU: %s", outputStr(fc.currentVelENU).c_str());
             printf("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg\n", fc.currentRPYDeg.x, fc.currentRPYDeg.y, fc.currentRPYDeg.z);
             printf("Search Over: %d\n", searchOver);                        
             if (fc.EMERGENCY) {
