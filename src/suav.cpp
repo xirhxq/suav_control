@@ -1,7 +1,5 @@
 #include "FlightControlXY.hpp"
 #include "DataLogger.hpp"
-#include <unistd.h>
-#include <iostream>
 
 using namespace std;
 
@@ -88,13 +86,12 @@ public:
         fc.setPositionOffset();
         printf("Position offset ENU / m: %s\n", outputStr(fc.positionOffset).c_str());
 
-        ascendPoints = {generateSmoothPath(
+        ascendPoints = generateSmoothPath(
             fc.positionOffsetPoint(0, 0, 0),
             fc.positionOffsetPoint(0, 0, 10),
             2
-        ), 
-        fc.compensatePositionOffset(newPoint(0, -30, 10.0))
-        };
+        );
+        ascendPoints.push_back(fc.compensatePositionOffset(newPoint(0, -30, 10.0)));
 
         printf("Ascend Points: \n");
         for (auto p: ascendPoints) {
