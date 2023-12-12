@@ -6,8 +6,8 @@
 #define Z_KP KP
 #define YAW_KP 1.0
 
-#define UWB_POS
-//#define GPS_POS
+// #define UWB_POS
+#define GPS_POS
 
 #if defined(UWB_POS) && defined(GPS_POS)
 #error "UWB_POS and GPS_POS cannot be defined at the same time"
@@ -294,8 +294,8 @@ public:
 
     Point compensateOffset(Point _p){
         Point res;
-        res.x = _p.x * cos(yawOffsetDeg) - _p.y * sin(yawOffsetDeg) + positionOffset.x;
-        res.y = _p.x * sin(yawOffsetDeg) + _p.y * cos(yawOffsetDeg) + positionOffset.y;
+        res.x = _p.x * sin(yawOffsetDeg * DEG2RAD_COE) - _p.y * cos(yawOffsetDeg * DEG2RAD_COE) + positionOffset.x;
+        res.y = _p.x * cos(yawOffsetDeg * DEG2RAD_COE) + _p.y * sin(yawOffsetDeg * DEG2RAD_COE) + positionOffset.y;
         res.z = _p.z;
         return res;
     }

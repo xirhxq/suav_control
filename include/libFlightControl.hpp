@@ -470,6 +470,32 @@ namespace {
         return pathPoints;
     }
 
+    Point constant_acc_to_target_point(Point start_point, Point end_point, Point now_point)
+    {
+        // Dt = 20, a = 0.5 , 100
+        double acc = 0.5;
+        double path_len = norm(minus(start_point, end_point));
+        double vel;
+        Point  target_vel;
+
+        if(norm(minus(now_point, start_point)) < 100) // speed up
+        {
+            vel = std::sqrt(norm(minus(now_point, start_point)) * 2  *  acc);
+        }
+        if(norm(minus(now_point, start_point))  > 100 && (norm(minus(now_point, start_point)) < (path_len - 100)))
+        {
+            vel = 10;
+        }
+        if(norm(minus(now_point, start_point)) > (path_len - 100)) // speed down
+        {
+            vel = std::sqrt(norm(minus(now_point, end_point)) * 2  *  acc);
+        }
+        target_vel.x = vel * ((minus(end_point, now_point)).x) / norm(minus(end_point, now_point));
+        target_vel.y = vel * ((minus(end_point, now_point)).y) / norm(minus(end_point, now_point));
+        target_vel.z = vel * ((minus(end_point, now_point)).z) / norm(minus(end_point, now_point));
+        printf("target_vel.x: %.2f, target_vel.y: %.2f, target_vel.z: %.2f\n", target_vel.x, target_vel.y, target_vel.z);
+        return target_vel;
+    }
 
 }
 

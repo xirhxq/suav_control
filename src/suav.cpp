@@ -35,6 +35,9 @@ private:
 
     double tic, toc, prepareStateTime, backStateTime;
     double taskBeginTime, taskTime;
+    double ascendFinishTime;
+
+    Point ascendLastPoint;
 
     Point desiredPoint;
     double desiredYawDeg;
@@ -87,11 +90,12 @@ public:
         printf("Position offset ENU / m: %s\n", outputStr(fc.positionOffset).c_str());
 
         ascendPoints = generateSmoothPath(
-            fc.positionOffsetPoint(0, 0, 0),
-            fc.positionOffsetPoint(0, 0, 10),
+            fc.compensateOffset(newPoint(0, 0, 0)),
+            fc.compensateOffset(newPoint(0, 0, 10)),
             2
         );
-        ascendPoints.push_back(fc.compensatePositionOffset(newPoint(0, -30, 10.0)));
+        ascendLastPoint = fc.compensateOffset(newPoint(40, 0, 10.0));
+        ascendPoints.push_back(ascendLastPoint);
 
         printf("Ascend Points: \n");
         for (auto p: ascendPoints) {
@@ -100,8 +104,8 @@ public:
         printf("\n");
 
         backPoints = generateSmoothPath(
-            fc.positionOffsetPoint(0, 0, 10),
-            fc.positionOffsetPoint(0, 0, 2),
+            fc.compensateOffset(newPoint(0, 0, 10)),
+            fc.compensateOffset(newPoint(0, 0, 2)),
             2
         );
 
@@ -117,7 +121,7 @@ public:
         };
 
         
-        holdPoint1 = fc.compensatePositionOffset(newPoint(0, -300, 10.0));
+        holdPoint1 = fc.compensateOffset(newPoint(300, 0, 10.0));
         // holdPoint2 = fc.compensatePositionOffset(newPoint(0, -300, 10.0));
 
         holdPoints = {holdPoint1};
@@ -213,45 +217,6 @@ public:
         printf("prepareStateTime: %.2lf", prepareStateTime);
     }
 
-    Point minus(Point point_0, Point point_1)
-    {
-        Point point_result;
-        point_result.x = point_0.x - point_1.x;
-        point_result.y = point_0.y - point_1.y;
-        point_result.z = point_0.z - point_1.z;
-        return point_result;
-    }
-    double norm(Point p_in)
-    {
-        return std::sqrt(p_in.x * p_in.x + p_in.y * p_in.y  + p_in.z * p_in.z);
-    }
-    Point constant_acc_to_target_point(Point start_point, Point end_point, Point now_point)
-    {
-        // Dt = 20, a = 0.5 , 100
-        double acc = 0.5;
-        double path_len = norm(minus(start_point, end_point));
-        double vel;
-        Point  target_vel;
-
-        if(norm(minus(now_point, start_point)) < 100) // speed up
-        {
-            vel = std::sqrt(norm(minus(now_point, start_point)) * 2  *  acc);
-        }
-        if(norm(minus(now_point, start_point))  > 100 && (norm(minus(now_point, start_point)) < (path_len - 100)))
-        {
-            vel = 10;
-        }
-        if(norm(minus(now_point, start_point)) > (path_len - 100)) // speed down
-        {
-            vel = std::sqrt(norm(minus(now_point, end_point)) * 2  *  acc);
-        }
-        target_vel.x = vel * ((minus(end_point, now_point)).x) / norm(minus(end_point, now_point));
-        target_vel.y = vel * ((minus(end_point, now_point)).y) / norm(minus(end_point, now_point));
-        target_vel.z = vel * ((minus(end_point, now_point)).z) / norm(minus(end_point, now_point));
-        printf("target_vel.x: %.2f, target_vel.y: %.2f, target_vel.z: %.2f\n", target_vel.x, target_vel.y, target_vel.z);
-        return target_vel;
-    }
-
 
 
     void toStepHold(){
@@ -297,22 +262,27 @@ public:
 
     void StepAscend() {
         printf("----StepAscend----\n");
-        desiredPoint = ascendPoints[ascendCnt];
-        fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
-        if (fc.isNear(desiredPoint, 1.0)){
-            ascendCnt++;
-            if (ascendCnt == ascendPoints.size()){
-                sleep(20);
-                std::cout << "Delay 20s for convergence then stepPrepare" << std::endl;
+        if (ascendCnt == ascendPoints.size()) {
+            fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
+            printf("Delaying for covergence then stepPrepare\n");
+            if (fc.getTimeNow() - ascendFinishTime >= 20) {
                 toStepPrepare(true);
             }
+        }
+        else {
+            desiredPoint = ascendPoints[ascendCnt];
+            fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
+            if (fc.isNear(desiredPoint, 1.0)){
+                ascendCnt++;
+            }
+            ascendFinishTime = fc.getTimeNow();
         }
     }
 
     void StepPrepare() {
         printf("----StepPrepare----\n");
         printf("Prepare to %ld/%ld point\n", holdCnt + 1, holdPoints.size());
-        Point vel_design =constant_acc_to_target_point(fc.positionOffsetPoint(0, -30.0, 10.0), fc.positionOffsetPoint(0, -300, 10.0), fc.currentPos);
+        Point vel_design = constant_acc_to_target_point(ascendLastPoint, holdPoint1, fc.currentPos);
         fc.xyCmd.setVelSat(vel_design.x, vel_design.y, vel_design.z);
         printf("prepare_vel.x: %.2f, prepare_vel.y: %.2f, prepare_vel.z: %.2f\n", vel_design.x, vel_design.y, vel_design.z);
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
@@ -339,7 +309,7 @@ public:
     void StepBack() {
         printf("----StepBack----\n");
         desiredPoint = backPoints[backCnt];
-        Point vel_design =constant_acc_to_target_point(fc.positionOffsetPoint(0, -300, 10.0), fc.positionOffsetPoint(0, 0, 10.0), fc.currentPos);
+        Point vel_design = constant_acc_to_target_point(holdPoint1, backPoints[0], fc.currentPos);
         fc.xyCmd.setVelSat(vel_design.x, vel_design.y, vel_design.z);
         printf("back_vel.x: %.2f, back_vel.y: %.2f, back_vel.z: %.2f\n", vel_design.x, vel_design.y, vel_design.z);
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
