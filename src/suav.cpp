@@ -59,7 +59,7 @@ public:
 
         searchOver = ignoreSearch;
         onGround = ON_GROUND;
-        
+
         uavStatePub = nh_.advertise<std_msgs::Int8>(name + "/uavState", 1);
         searchStateSub = nh_.subscribe(name + "/pod/searchState", 1, &TASK::searchStateCallback, this);
 
@@ -120,13 +120,12 @@ public:
                 degreeRound0To360(fc.yawOffsetDeg + 0)
         };
 
-        
         holdPoint1 = fc.compensateOffset(newPoint(300, 0, 10.0));
         // holdPoint2 = fc.compensatePositionOffset(newPoint(0, -300, 10.0));
 
         holdPoints = {holdPoint1};
         holdTimes = {60};
-        
+
         printf("Hold Trajectory: \n");
         for (int i = 0; i < holdPoints.size(); i++) {
             printf("[%d]: %.2lf seconds @ %s with yaw %.2lf deg\n", i + 1, holdTimes[i], outputStr(holdPoints[i]).c_str(), holdYawsDeg[i]);
@@ -144,7 +143,7 @@ public:
                 assert(0);
             }
         }
-    
+
         std::vector<std::pair<std::string, std::string> > vn = {
             {"taskTime", "double"},
             {"state", "enum"},
@@ -196,59 +195,6 @@ public:
         fc.xyCmd.setVelSat(2, 1, 0.5);
     }
 
-    void toStepAscend(){
-        taskState = ASCEND;
-        ascendCnt = 0;
-        desiredPoint = ascendPoints[ascendCnt];
-        desiredYawDeg = fc.yawOffsetDeg;
-        tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 1, 2);
-    }
-
-    void toStepPrepare(double restart=false){
-        taskState = PREPARE;
-        if (restart) {
-            holdCnt = 0;
-        }
-        desiredPoint = holdPoints[holdCnt];
-        desiredYawDeg = holdYawsDeg[holdCnt];
-        tic = fc.getTimeNow();
-        prepareStateTime = toc - tic;
-        printf("prepareStateTime: %.2lf", prepareStateTime);
-    }
-
-
-
-    void toStepHold(){
-        taskState = HOLD;
-        tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 1, 2);
-    }
-
-    void toStepBack(){
-        taskState = BACK;
-        backCnt = 0;
-        desiredPoint = backPoints[backCnt];
-        desiredYawDeg = fc.yawOffsetDeg;
-        tic = fc.getTimeNow();
-        backStateTime = toc - tic;
-        printf("backStateTime: %.2lf", backStateTime);
-        // fc.xyCmd.setVelSat(2, 2, 2);
-
-    }
-
-    void toStepLand(){
-        taskState = LAND;
-        tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 1, 0.5);
-    }
-
-    void toStepEnd() {
-        taskState = END;
-        tic = fc.getTimeNow();
-        fc.xyCmd.setVelSat(2, 1, 0.5);
-    }
-
     void StepTakeoff() {
         printf("----StepTakeoff----\n");
         if (!onGround) {
@@ -258,6 +204,15 @@ public:
         if (fc.enoughTimeAfter(taskBeginTime, 5) && fc.currentPos.z >= 0.3){
             toStepAscend();
         }
+    }
+
+    void toStepAscend(){
+        taskState = ASCEND;
+        ascendCnt = 0;
+        desiredPoint = ascendPoints[ascendCnt];
+        desiredYawDeg = fc.yawOffsetDeg;
+        tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(2, 1, 2);
     }
 
     void StepAscend() {
@@ -279,16 +234,33 @@ public:
         }
     }
 
+    void toStepPrepare(double restart=false){
+        taskState = PREPARE;
+        if (restart) {
+            holdCnt = 0;
+        }
+        desiredPoint = holdPoints[holdCnt];
+        desiredYawDeg = holdYawsDeg[holdCnt];
+        tic = fc.getTimeNow();
+        prepareStateTime = toc - tic;
+        printf("prepareStateTime: %.2lf", prepareStateTime);
+    }
+
     void StepPrepare() {
         printf("----StepPrepare----\n");
         printf("Prepare to %ld/%ld point\n", holdCnt + 1, holdPoints.size());
-        Point vel_design = constant_acc_to_target_point(ascendLastPoint, holdPoint1, fc.currentPos);
-        fc.xyCmd.setVelSat(vel_design.x, vel_design.y, vel_design.z);
-        printf("prepare_vel.x: %.2f, prepare_vel.y: %.2f, prepare_vel.z: %.2f\n", vel_design.x, vel_design.y, vel_design.z);
+        fc.xyCmd.setVelSat(constant_acc_to_target_point(ascendLastPoint, holdPoint1, fc.currentPos));
+        printf("Prepare Velocity: %s\n", outputStr(vel_design).c_str());
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (fc.isNear(desiredPoint, 1.0) && fc.yawNearDeg(desiredYawDeg, 5.0)){
             toStepHold();
         }
+    }
+
+    void toStepHold(){
+        taskState = HOLD;
+        tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(2, 1, 2);
     }
 
     void StepHold() {
@@ -306,12 +278,22 @@ public:
         }
     }
 
+    void toStepBack(){
+        taskState = BACK;
+        backCnt = 0;
+        desiredPoint = backPoints[backCnt];
+        desiredYawDeg = fc.yawOffsetDeg;
+        tic = fc.getTimeNow();
+        backStateTime = toc - tic;
+        printf("backStateTime: %.2lf", backStateTime);
+        // fc.xyCmd.setVelSat(2, 2, 2);
+    }
+
     void StepBack() {
         printf("----StepBack----\n");
         desiredPoint = backPoints[backCnt];
-        Point vel_design = constant_acc_to_target_point(holdPoint1, backPoints[0], fc.currentPos);
-        fc.xyCmd.setVelSat(vel_design.x, vel_design.y, vel_design.z);
-        printf("back_vel.x: %.2f, back_vel.y: %.2f, back_vel.z: %.2f\n", vel_design.x, vel_design.y, vel_design.z);
+        fc.xyCmd.setVelSat(constant_acc_to_target_point(holdPoint1, backPoints[0], fc.currentPos));
+        printf("Back Velocity: %s\n", outputStr(vel_design).c_str());
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (fc.isNear(desiredPoint, 1.0)){
             backCnt++;
@@ -324,6 +306,12 @@ public:
         }
     }
 
+    void toStepLand(){
+        taskState = LAND;
+        tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(2, 1, 0.5);
+    }
+
     void StepLand() {
         printf("----StepLand----\n");
         printf("Landing...\n");
@@ -331,6 +319,12 @@ public:
         if (nearlyIs(fc.currentPos.z, 0.0, 0.2)) {
             toStepEnd();
         }
+    }
+
+    void toStepEnd() {
+        taskState = END;
+        tic = fc.getTimeNow();
+        fc.xyCmd.setVelSat(2, 1, 0.5);
     }
 
     void ControlStateMachine() {
@@ -381,7 +375,7 @@ public:
             printf("Desired Point: %s\n", outputStr(desiredPoint).c_str());
             printf("Current Velocity ENU: %s", outputStr(fc.currentVelENU).c_str());
             printf("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg\n", fc.currentRPYDeg.x, fc.currentRPYDeg.y, fc.currentRPYDeg.z);
-            printf("Search Over: %d\n", searchOver);                        
+            printf("Search Over: %d\n", searchOver);
             if (fc.EMERGENCY) {
                 fc.uavHoldCtrl();
                 printf("!!!!!!!!!!!!EMERGENCY!!!!!!!!!!!!\n");
@@ -402,7 +396,7 @@ public:
             dl.log("desiredPoint", desiredPoint);
             dl.log("desiredYawDeg", desiredYawDeg);
             dl.newline();
-            
+
             ros::spinOnce();
             rate.sleep();
         }

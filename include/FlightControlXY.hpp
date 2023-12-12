@@ -162,6 +162,11 @@ public:
         nVelSat = newNVelSat;
         uVelSat = newUVelSat;
     }
+    void setVelSat(Point newVelSatENU) {
+        eVelSat = newVelSatENU.x;
+        nVelSat = newVelSatENU.y;
+        uVelSat = newVelSatENU.z;
+    }
     auto getVelSatStr() {
         char s[50];
         sprintf(s, "(E%.2lf, N%.2lf, U%.2lf)", eVelSat, nVelSat, uVelSat);
