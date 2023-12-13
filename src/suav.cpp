@@ -250,7 +250,7 @@ public:
         printf("----StepPrepare----\n");
         printf("Prepare to %ld/%ld point\n", holdCnt + 1, holdPoints.size());
         fc.xyCmd.setVelSat(constant_acc_to_target_point(ascendLastPoint, holdPoint1, fc.currentPos));
-        printf("Prepare Velocity: %s\n", outputStr(vel_design).c_str());
+        printf("Prepare Velocity: %s\n", fc.xyCmd.getVelSatStr().c_str());
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (fc.isNear(desiredPoint, 1.0) && fc.yawNearDeg(desiredYawDeg, 5.0)){
             toStepHold();
@@ -293,7 +293,7 @@ public:
         printf("----StepBack----\n");
         desiredPoint = backPoints[backCnt];
         fc.xyCmd.setVelSat(constant_acc_to_target_point(holdPoint1, backPoints[0], fc.currentPos));
-        printf("Back Velocity: %s\n", outputStr(vel_design).c_str());
+        printf("Back Velocity: %s\n", fc.xyCmd.getVelSatStr().c_str());
         fc.uavControlToPointWithYaw(desiredPoint, desiredYawDeg);
         if (fc.isNear(desiredPoint, 1.0)){
             backCnt++;
