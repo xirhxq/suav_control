@@ -335,7 +335,7 @@ private:
     template<typename T>
     std::string getValStr(const T &value) {
         std::stringstream ss;
-        ss << value;
+        ss << std::fixed << value;
         return ss.str();
     }
 
