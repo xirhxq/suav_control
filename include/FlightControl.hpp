@@ -7,13 +7,14 @@
 #define Y_KP KP
 #define Z_KP KP
 #define YAW_KP 1.0 
-#define UWB_INSTEAD_VO
+// #define UWB_INSTEAD_VO
 //#define GPS_HEIGHT
 
 class FLIGHT_CONTROL {
 private:
     ros::NodeHandle fc_nh;
-    ros::Publisher ctrl_cmd_pub, gimbal_angle_cmd_pub, gimbal_speed_cmd_pub;
+    ros::Publisher ctrl_cmd_pub, gimbal_angle_cmd_pub, gimbal_speed_cmd_pub, droneStatusPub, searchPointPub;
+    ros::Rate rate(50);
     ros::ServiceClient sdk_ctrl_authority_service, drone_task_service, set_local_pos_reference;
     uint8_t flight_status = 255;
     uint8_t display_mode = 255;
@@ -27,6 +28,7 @@ private:
     ros::Subscriber flightStatusSub;
     ros::Subscriber displayModeSub;
     ros::Subscriber cmd_sub;
+    ros::Subscriber pod_servo;
 
 public:
 
@@ -40,6 +42,7 @@ public:
     double yaw_offset;
     Point position_offset;
     geometry_msgs::Vector3 current_range_pos;
+    // std_msgs::Float64MultiArray msg_point;
     bool EMERGENCY = false;
 
 
@@ -47,11 +50,16 @@ public:
         attitudeSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/attitude", 10, &FLIGHT_CONTROL::attitude_callback, this);
         gimbal_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/gimbal_angle", 10, &FLIGHT_CONTROL::gimbal_callback, this);
         height_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/height_above_takeoff", 10, &FLIGHT_CONTROL::height_callback, this);
+        pod_servo = fc_nh.subscribe(uav_name + "/searchPoint", 10, &FLIGHT_CONTROL::podServoCallback, this);
         vo_pos_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/vo_position", 10, &FLIGHT_CONTROL::vo_pos_callback, this);
         range_pos_sub = fc_nh.subscribe(uav_name + "/uwb/filter/odom", 10, &FLIGHT_CONTROL::range_pos_callback, this);
         flightStatusSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/flight_status", 10, &FLIGHT_CONTROL::flight_status_callback, this);
         displayModeSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/display_mode", 10, &FLIGHT_CONTROL::display_mode_callback, this);
         cmd_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/commander_cmd", 10, &FLIGHT_CONTROL::cmd_callback, this);
+        droneStatusPub = 
+            nh_.advertise<std_msgs::Int16>(uav_name + "/uavStatus", 10);
+        searchPointPub = 
+            nh_.advertise<std_msgs::Float64MultiArray>(uav_name + "/searchPoint", 10);
         gimbal_angle_cmd_pub =
             nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal/gimbal_angle_cmd", 10);
         gimbal_speed_cmd_pub =
@@ -94,9 +102,16 @@ public:
     void height_callback(const std_msgs::Float32::ConstPtr& msg) {
         current_height = *msg;
     #ifndef GPS_HEIGHT
-        // current_pos_raw.z = current_height.data;
+        current_pos_raw.z = current_height.data;
         // ROS_INFO("Height: %.2lf\n", current_height.data);
     #endif
+    }
+
+    void podServoCallback(const std_msgs::Float64MultiArray::ConstPtr &msg){
+        
+        current_pos_raw.x = msg->data[0];
+        current_pos_raw.y
+        current_pos_raw.z
     }
 
     void vo_pos_callback(const dji_osdk_ros::VOPosition::ConstPtr& msg) {

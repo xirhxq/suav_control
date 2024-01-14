@@ -154,7 +154,7 @@ public:
         ROS_INFO("###----StepHold----###");
         double hold_time = 20.0;
         // auto expected_point = fc.compensate_yaw_offset(MyDataFun::new_point(10.0, 8.0, 2.0), fc.yaw_offset);
-        auto expected_point = MyDataFun::new_point(-1.5, -1.5, 6.0);
+        auto expected_point = MyDataFun::new_point(0.0, 0.0, 20.0);
         ROS_INFO("Hold %.2lf", fc.get_time_now() - hold_begin_time);
         ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
@@ -168,7 +168,7 @@ public:
     void StepBack() {
         ROS_INFO("###----StepBack----###");
         double hold_time = 5.0;
-        auto expected_point = MyDataFun::new_point(-1.5, -1.5, 2.0);
+        auto expected_point = MyDataFun::new_point(0.0, 0.0, 2.0);
         ROS_INFO("Back %.2lf", fc.get_time_now() - hold_begin_time);
         ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
