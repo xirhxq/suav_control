@@ -7,7 +7,7 @@
 #define Y_KP KP
 #define Z_KP KP
 #define YAW_KP 1.0 
-#define UWB_INSTEAD_VO
+//#define UWB_INSTEAD_VO
 //#define GPS_HEIGHT
 
 class FLIGHT_CONTROL {
@@ -94,7 +94,7 @@ public:
     void height_callback(const std_msgs::Float32::ConstPtr& msg) {
         current_height = *msg;
     #ifndef GPS_HEIGHT
-        // current_pos_raw.z = current_height.data;
+        current_pos_raw.z = current_height.data;
         // ROS_INFO("Height: %.2lf\n", current_height.data);
     #endif
     }
