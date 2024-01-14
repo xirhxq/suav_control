@@ -191,7 +191,10 @@ public:
 
     void ControlStateMachine() {
         std_msgs::Int16 msg;
-        msg.data = task_state;
+        msg.data = id * 100 + task_state * 10;
+        if (task_state == HOLD) {
+            msg.data += 1;
+        }
         uavStatePub.publish(msg);
         switch (task_state) {
             case TAKEOFF: {
