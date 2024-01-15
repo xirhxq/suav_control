@@ -74,28 +74,27 @@ public:
 
         tf::Matrix3x3 R_FLU2ENU(tf::Quaternion(quat.x, quat.y, quat.z, quat.w));
         R_FLU2ENU.getRPY(ans.x, ans.y, ans.z);
-        // ROS_INFO("Euler angle: %.2lf %.2lf %.2lf", ans.x, ans.y, ans.z);
+        // printf("Euler angle: %.2lf %.2lf %.2lf\n", ans.x, ans.y, ans.z);
         return ans;
     }
 
     void attitude_callback(const geometry_msgs::QuaternionStamped::ConstPtr& msg) {
         current_atti.quaternion = msg->quaternion;
         current_euler_angle = toEulerAngle(current_atti.quaternion);
-        // ROS_INFO("get attitude %s",
         // MyDataFun::output_str(current_euler_angle).c_str());
     }
     void gimbal_callback(const geometry_msgs::Vector3Stamped::ConstPtr& msg) {
         current_gimbal_angle.x = msg->vector.y;
         current_gimbal_angle.y = msg->vector.x;
         current_gimbal_angle.z = msg->vector.z;
-        // ROS_INFO("Gimbal %s", MyDataFun::output_str(current_gimbal_angle).c_str());
+        // printf("Gimbal %s\n", MyDataFun::output_str(current_gimbal_angle).c_str());
     }
 
     void height_callback(const std_msgs::Float32::ConstPtr& msg) {
         current_height = *msg;
     #ifndef GPS_HEIGHT
         current_pos_raw.z = current_height.data;
-        // ROS_INFO("Height: %.2lf\n", current_height.data);
+        // printf("Height: %.2lf\n", current_height.data);
     #endif
     }
 
@@ -191,7 +190,7 @@ public:
             ROS_ERROR("takeoff_land fail");
             return false;
         }
-        ROS_INFO("Takeoff/Land Success!");
+        printf("Takeoff/Land Success!\n");
 
         return true;
     }
@@ -206,7 +205,7 @@ public:
             return false;
         }
 
-        ROS_INFO("obtain control successful!");
+        printf("obtain control successful!\n");
         return true;
     }
 
@@ -233,7 +232,7 @@ public:
             return false;
         } else {
             start_time = ros::Time::now();
-            ROS_INFO("Motor Spinning ...");
+            printf("Motor Spinning ...\n");
             ros::spinOnce();
         }
 
@@ -254,7 +253,7 @@ public:
             return false;
         } else {
             start_time = ros::Time::now();
-            ROS_INFO("Ascending...");
+            printf("Ascending...\n");
             ros::spinOnce();
         }
 
@@ -268,7 +267,7 @@ public:
 
         if (display_mode != DJISDK::DisplayMode::MODE_P_GPS ||
             display_mode != DJISDK::DisplayMode::MODE_ATTITUDE) {
-            ROS_INFO("Successful takeoff!");
+            printf("Successful takeoff!\n");
             start_time = ros::Time::now();
         } else {
             ROS_ERROR(
@@ -392,7 +391,7 @@ public:
         sat.y = 0.1;
         sat.z = 0.2;
         MyDataFun::saturate_vel(vel, sat);
-        ROS_INFO("Velo cmd: %s", MyDataFun::output_str(vel).c_str());
+        printf("Velo cmd: %s\n", MyDataFun::output_str(vel).c_str());
         M210_velocity_yaw_rate_ctrl(vel.x, vel.y, vel.z, yaw_rate);
     }
 
@@ -401,7 +400,7 @@ public:
         double yaw_diff = MyDataFun::angle_2d(current_pos_raw, ctrl_cmd) - current_euler_angle.z;
         yaw_diff = MyMathFun::rad_round(yaw_diff);
         if (MyDataFun::dis_2d(ctrl_cmd, current_pos_raw) <= 1) yaw_diff = 0;
-        ROS_INFO("Yaw diff: %.2lf", yaw_diff);
+        printf("Yaw diff: %.2lf\n", yaw_diff);
         UAV_velocity_yaw_rate_ctrl(MyDataFun::minus(ctrl_cmd, current_pos_raw), yaw_diff);
     }
 
@@ -410,7 +409,7 @@ public:
         double yaw_diff = _yaw - current_euler_angle.z;
         yaw_diff = MyMathFun::rad_round(yaw_diff);
         if (MyDataFun::dis_2d(ctrl_cmd, current_pos_raw) <= 1) yaw_diff = 0;
-        ROS_INFO("Yaw diff: %.2lf", yaw_diff);
+        printf("Yaw diff: %.2lf\n", yaw_diff);
         UAV_velocity_yaw_rate_ctrl(MyDataFun::minus(ctrl_cmd, current_pos_raw), yaw_diff);
     }
 
@@ -424,7 +423,7 @@ public:
         v.x = roll;
         v.y = pitch;
         v.z = yaw;
-        // ROS_INFO("rpy: %.2lf %.2lf %.2lf\n", roll, pitch, yaw);
+        // printf("rpy: %.2lf %.2lf %.2lf\n", roll, pitch, yaw);
         gimbal_angle_cmd_pub.publish(v);
     }
 
