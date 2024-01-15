@@ -183,7 +183,7 @@ public:
         ROS_INFO("###----StepLand----###");
         ROS_INFO("Landing...");
         fc.takeoff_land(dji_osdk_ros::DroneTaskControl::Request::TASK_LAND);
-        if (MyMathFun::nearly_is(fc.current_pos_raw.z, 0.0, 0.2)) {
+        if (MyMathFun::nearly_is(fc.current_pos_raw.z, 0.1, 0.2)) {
             toStepEnd();
         }
         // task_state = BACK;
