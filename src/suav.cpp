@@ -8,6 +8,74 @@
 using namespace dji_osdk_ros;
 using namespace std;
 
+struct WayPoint {
+        int id;
+        int log;
+        bool status;
+        bool align;
+        bool update;
+        double tic;
+        double toc;
+        double duration;
+        Eigen::Vector3d last;
+        Eigen::Vector4d pose;
+
+        WayPoint() {
+            id = -1;
+            log = id;
+            tic = 0.0;
+            toc = 0.0;
+            duration = 0.0;
+            status = false;
+            align = false;
+            update = false;
+            pose.setZero();
+        }
+
+        void unready() {
+            update = true;
+            status = false;
+        }
+
+        void ready() {
+            update = false;
+            status = true;
+        }
+
+        void refresh(Eigen::Vector3d point) {
+            align = false;
+            last = point;
+            tic = ros::Time::now().toSec();
+        }
+
+        bool timeout(double latency) {
+            std::cout << "WARNING: UAV HOVERING [" << latency 
+                    << "s] FOR STABILITY CHECK" << std::endl;
+            
+            toc = ros::Time::now().toSec();
+
+            double duration = toc - tic;
+            
+            std::cout << "hover duration: " << duration << std::endl;
+            
+            if(duration > latency) {
+                return true; 
+            } else {
+                return false;
+            }
+        }
+
+        bool over() {
+            if(id == 6) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+    };
+
+
 class TASK {
 
 private:
@@ -93,8 +161,10 @@ public:
         //     rate.sleep();
         // }
         if (!ON_GROUND) {
-            fc.obtain_control();
-            fc.monitoredTakeoff();
+            if(fc.set_local_position()){
+                fc.obtain_control();
+                fc.monitoredTakeoff();
+            }
         }
 
 
@@ -120,81 +190,15 @@ public:
         }
     }
 
-    struct WayPoint {
-        int id;
-        int log;
-        bool status;
-        bool align;
-        bool update;
-        double tic;
-        double toc;
-        double duration;
-        Eigen::Vector3d last;
-        Eigen::Vector4d pose;
-
-        WayPoint() {
-            id = -1;
-            log = id;
-            tic = 0.0;
-            toc = 0.0;
-            duration = 0.0;
-            status = false;
-            align = false;
-            update = false;
-            pose.setZero();
-        }
-
-        void unready() {
-            update = true;
-            status = false;
-        }
-
-        void ready() {
-            update = false;
-            status = true;
-        }
-
-        void refresh(Eigen::Vector3d point) {
-            align = false;
-            last = point;
-            tic = ros::Time::now().toSec();
-        }
-
-        bool timeout(double latency) {
-            std::cout << YELLOW "WARNING: UAV HOVERING [" << latency 
-                    << "s] FOR STABILITY CHECK" RESET << std::endl;
-            
-            toc = ros::Time::now().toSec();
-
-            double duration = toc - tic;
-            
-            std::cout << "hover duration: " << duration << std::endl;
-            
-            if(duration > latency) {
-                return true; 
-            } else {
-                return false;
-            }
-        }
-
-        bool over() {
-            if(id == 6) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-    };
     WayPoint searchPoints;
 
     void podServoCallback(const std_msgs::Float64MultiArray::ConstPtr& msg){
-        searchPoints.id = msg.data[0];
-        searchPoints.pose[0] = msg.data[1];
-        searchPoints.pose[1] = msg.data[2];
-        searchPoints.pose[2] = msg.data[3];
-        searchPoints.pose[3] = msg.data[4];
-        searchPoints.duration = msg.data[5];
+        searchPoints.id = msg->data[0];
+        searchPoints.pose[0] = msg->data[1];
+        searchPoints.pose[1] = msg->data[2];
+        searchPoints.pose[2] = msg->data[3];
+        searchPoints.pose[3] = msg->data[4];
+        searchPoints.duration = msg->data[5];
 
         if(searchPoints.log != searchPoints.id) {
             searchPoints.unready();
@@ -234,6 +238,7 @@ public:
         ROS_INFO("###----StepTakeoff----###");
         double expected_height = 6.0;
         ROS_INFO("Expected height @ %.2lf", expected_height);
+        // set_local_position();
         fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
         status_encoder();
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_height, 0.2)){

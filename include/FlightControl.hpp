@@ -8,13 +8,13 @@
 #define Z_KP KP
 #define YAW_KP 1.0 
 // #define UWB_INSTEAD_VO
-//#define GPS_HEIGHT
+#define GPS_HEIGHT
 
 class FLIGHT_CONTROL {
 private:
     ros::NodeHandle fc_nh;
-    ros::Publisher ctrl_cmd_pub, gimbal_angle_cmd_pub, gimbal_speed_cmd_pub, droneStatusPub, searchPointPub;
-    ros::Rate rate(50);
+    ros::Publisher ctrl_cmd_pub, gimbal_angle_cmd_pub, gimbal_speed_cmd_pub;
+    // ros::Rate rate(50);
     ros::ServiceClient sdk_ctrl_authority_service, drone_task_service, set_local_pos_reference;
     uint8_t flight_status = 255;
     uint8_t display_mode = 255;
@@ -39,6 +39,7 @@ public:
     geometry_msgs::Vector3 current_pos_raw;
     std_msgs::Float32 current_height;
     dji_osdk_ros::VOPosition current_vo_pos;
+    geometry_msgs::PointStamped current_gps_pos;
     geometry_msgs::Vector3 current_local_pos;
     double yaw_offset;
     Point position_offset;
@@ -58,10 +59,6 @@ public:
         // taskStatusSub = fc_nh.subscribe(uav_name + "/uavStatus", 10, FLIGHT_CONTROL::taskStatusCallback, this);
         displayModeSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/display_mode", 10, &FLIGHT_CONTROL::display_mode_callback, this);
         cmd_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/commander_cmd", 10, &FLIGHT_CONTROL::cmd_callback, this);
-        droneStatusPub = 
-            nh_.advertise<std_msgs::Int16>(uav_name + "/uavStatus", 10);
-        searchPointPub = 
-            nh_.advertise<std_msgs::Float64MultiArray>(uav_name + "/searchPoint", 10);
         gimbal_angle_cmd_pub =
             nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal/gimbal_angle_cmd", 10);
         gimbal_speed_cmd_pub =
@@ -118,12 +115,16 @@ public:
     }
 
     void local_pos_callback(const geometry_msgs::PointStamped::ConstPtr& msg){
-        current_local_pos.x = msg->point.x;
-        current_local_pos.y = msg->point.y;
-        current_local_pos.z = msg->point.z;
-    #ifdef GPS_HEIGHT
-        current_pos_raw.z = current_local_pos.z;
-    #endif
+        current_gps_pos = *msg;
+        current_pos_raw.x = current_gps_pos.point.x;
+        current_pos_raw.y = current_gps_pos.point.y;
+        // current_local_pos.x = msg->point.x;
+        // current_local_pos.y = msg->point.y;
+        // current_local_pos.z = msg->point.z;
+    // #ifdef GPS_HEIGHT
+        // current_pos_raw.z = current_local_pos.z;
+        current_pos_raw.z = current_gps_pos.point.z;
+    // #endif
     }
 
     Point compensate_position_offset(Point _p){
@@ -154,16 +155,12 @@ public:
         #ifdef UWB_INSTEAD_VO
         current_pos_raw.x = current_range_pos.x;
         current_pos_raw.y = current_range_pos.y;
-	current_pos_raw.z = current_range_pos.z;
+	    current_pos_raw.z = current_range_pos.z;
         #endif
     }
 
     void flight_status_callback(const std_msgs::UInt8::ConstPtr& msg) {
         flight_status = msg->data;
-    }
-
-    void taskStatusCallback(const std_msgs::Int16::ConstPtr &msg){
-        task_status = msg->data;
     }
 
     void display_mode_callback(const std_msgs::UInt8::ConstPtr& msg) {
