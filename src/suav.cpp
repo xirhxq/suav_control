@@ -31,7 +31,8 @@ private:
     ros::Rate rate;
 
     ros::Publisher uavReadyPub, uavStatePub;
-    ros::Subscriber searchStateSub;
+    ros::Subscriber searchPointSub;
+    int id = -1;
     bool searchOver;
     int searchState;
 
@@ -45,7 +46,6 @@ public:
         
         uavStatePub = nh_.advertise<std_msgs::Int16>(name + "/uavState", 1);
         searchPointSub = nh_.subscribe(name + "/searchPoint", 1, &TASK::searchPointCallback, this);
-        int id = -1;
 
         for (int i = 0; i < 100; i++) {
             ros::spinOnce();
