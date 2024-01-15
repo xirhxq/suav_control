@@ -26,9 +26,10 @@ private:
     ros::Subscriber vo_pos_sub;
     ros::Subscriber range_pos_sub;
     ros::Subscriber flightStatusSub;
+    // ros::Subscriber taskStatusSub;
     ros::Subscriber displayModeSub;
     ros::Subscriber cmd_sub;
-    ros::Subscriber pod_servo;
+    // ros::Subscriber pod_servo;
 
 public:
 
@@ -50,10 +51,11 @@ public:
         attitudeSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/attitude", 10, &FLIGHT_CONTROL::attitude_callback, this);
         gimbal_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/gimbal_angle", 10, &FLIGHT_CONTROL::gimbal_callback, this);
         height_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/height_above_takeoff", 10, &FLIGHT_CONTROL::height_callback, this);
-        pod_servo = fc_nh.subscribe(uav_name + "/searchPoint", 10, &FLIGHT_CONTROL::podServoCallback, this);
+        // pod_servo = fc_nh.subscribe(uav_name + "/searchPoint", 10, &FLIGHT_CONTROL::podServoCallback, this);
         vo_pos_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/vo_position", 10, &FLIGHT_CONTROL::vo_pos_callback, this);
         range_pos_sub = fc_nh.subscribe(uav_name + "/uwb/filter/odom", 10, &FLIGHT_CONTROL::range_pos_callback, this);
         flightStatusSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/flight_status", 10, &FLIGHT_CONTROL::flight_status_callback, this);
+        // taskStatusSub = fc_nh.subscribe(uav_name + "/uavStatus", 10, FLIGHT_CONTROL::taskStatusCallback, this);
         displayModeSub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/display_mode", 10, &FLIGHT_CONTROL::display_mode_callback, this);
         cmd_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/commander_cmd", 10, &FLIGHT_CONTROL::cmd_callback, this);
         droneStatusPub = 
@@ -105,13 +107,6 @@ public:
         current_pos_raw.z = current_height.data;
         // ROS_INFO("Height: %.2lf\n", current_height.data);
     #endif
-    }
-
-    void podServoCallback(const std_msgs::Float64MultiArray::ConstPtr &msg){
-        
-        current_pos_raw.x = msg->data[0];
-        current_pos_raw.y
-        current_pos_raw.z
     }
 
     void vo_pos_callback(const dji_osdk_ros::VOPosition::ConstPtr& msg) {
@@ -167,6 +162,9 @@ public:
         flight_status = msg->data;
     }
 
+    void taskStatusCallback(const std_msgs::Int16::ConstPtr &msg){
+        task_status = msg->data;
+    }
 
     void display_mode_callback(const std_msgs::UInt8::ConstPtr& msg) {
         display_mode = msg->data;

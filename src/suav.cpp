@@ -28,8 +28,8 @@ private:
     DataLogger dl;
     ros::Rate rate;
 
-    ros::Publisher uavReadyPub, uavStatePub;
-    ros::Subscriber searchStateSub;
+    ros::Publisher uavReadyPub, uavStatePub, m300StatusPub;
+    ros::Subscriber searchStateSub, podServoSub;
     bool searchOver;
     int searchState;
 
@@ -42,7 +42,11 @@ public:
         searchOver = ignoreSearch;
         
         uavStatePub = nh_.advertise<std_msgs::Int8>(name + "/uavState", 1);
+
+        m300StatusPub = nh_.advertise<std_msgs::Int16>(name + "/uavStatus", 10);
+
         searchStateSub = nh_.subscribe(name + "/pod/searchState", 1, &TASK::searchStateCallback, this);
+        podServoSub = nh_.subscribe(name + "/searchPoint", 10, &TASK::podServoCallback, this);
 
 
         for (int i = 0; i < 100; i++) {
@@ -116,6 +120,94 @@ public:
         }
     }
 
+    struct WayPoint {
+        int id;
+        int log;
+        bool status;
+        bool align;
+        bool update;
+        double tic;
+        double toc;
+        double duration;
+        Eigen::Vector3d last;
+        Eigen::Vector4d pose;
+
+        WayPoint() {
+            id = -1;
+            log = id;
+            tic = 0.0;
+            toc = 0.0;
+            duration = 0.0;
+            status = false;
+            align = false;
+            update = false;
+            pose.setZero();
+        }
+
+        void unready() {
+            update = true;
+            status = false;
+        }
+
+        void ready() {
+            update = false;
+            status = true;
+        }
+
+        void refresh(Eigen::Vector3d point) {
+            align = false;
+            last = point;
+            tic = ros::Time::now().toSec();
+        }
+
+        bool timeout(double latency) {
+            std::cout << YELLOW "WARNING: UAV HOVERING [" << latency 
+                    << "s] FOR STABILITY CHECK" RESET << std::endl;
+            
+            toc = ros::Time::now().toSec();
+
+            double duration = toc - tic;
+            
+            std::cout << "hover duration: " << duration << std::endl;
+            
+            if(duration > latency) {
+                return true; 
+            } else {
+                return false;
+            }
+        }
+
+        bool over() {
+            if(id == 6) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+    };
+    WayPoint searchPoints;
+
+    void podServoCallback(const std_msgs::Float64MultiArray::ConstPtr& msg){
+        searchPoints.id = msg.data[0];
+        searchPoints.pose[0] = msg.data[1];
+        searchPoints.pose[1] = msg.data[2];
+        searchPoints.pose[2] = msg.data[3];
+        searchPoints.pose[3] = msg.data[4];
+        searchPoints.duration = msg.data[5];
+
+        if(searchPoints.log != searchPoints.id) {
+            searchPoints.unready();
+            searchPoints.log = searchPoints.id;
+        }
+    }   
+
+    void status_encoder(){
+        std_msgs::Int16 m300StatusMsg;
+        m300StatusMsg.data = searchPoints.id * 100 + task_state * 10 + searchPoints.status;
+        m300StatusPub.publish(m300StatusMsg);
+    }   
+
     void toStepTakeoff(){
         task_state = TAKEOFF;
         task_begin_time = fc.get_time_now();
@@ -143,6 +235,7 @@ public:
         double expected_height = 6.0;
         ROS_INFO("Expected height @ %.2lf", expected_height);
         fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
+        status_encoder();
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_height, 0.2)){
             // ROS_INFO("Arrive expected height @ %.2lf", expected_height);
             toStepHold();
@@ -154,12 +247,15 @@ public:
         ROS_INFO("###----StepHold----###");
         double hold_time = 20.0;
         // auto expected_point = fc.compensate_yaw_offset(MyDataFun::new_point(10.0, 8.0, 2.0), fc.yaw_offset);
-        auto expected_point = MyDataFun::new_point(0.0, 0.0, 20.0);
+        // auto expected_point = MyDataFun::new_point(0.0, 0.0, 20.0);
+        auto expected_point = MyDataFun::new_point(searchPoints.pose[0], searchPoints.pose[1], searchPoints.pose[2]);
         ROS_INFO("Hold %.2lf", fc.get_time_now() - hold_begin_time);
         ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
         // fc.M210_adjust_yaw(fc.yaw_offset);
+        fc.yaw_offset = searchPoints.pose[3];
         fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
+        status_encoder();
         if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
             toStepBack();
         }
@@ -173,6 +269,7 @@ public:
         ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
         fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
+        status_encoder();
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.2)){
               toStepLand();
         }
@@ -182,6 +279,7 @@ public:
         ROS_INFO("###----StepLand----###");
         ROS_INFO("Landing...");
         fc.takeoff_land(dji_osdk_ros::DroneTaskControl::Request::TASK_LAND);
+        status_encoder();
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, 0.0, 0.2)) {
             toStepEnd();
         }
@@ -214,6 +312,8 @@ public:
             }
         }
     }
+
+
 
     void spin(){
 
