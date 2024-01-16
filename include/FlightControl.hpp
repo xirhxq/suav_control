@@ -9,6 +9,7 @@
 #define YAW_KP 1.0 
 // #define UWB_INSTEAD_VO
 #define GPS_HEIGHT
+#define GPS_INSTEAD_UWB
 
 class FLIGHT_CONTROL {
 private:
@@ -29,6 +30,7 @@ private:
     // ros::Subscriber taskStatusSub;
     ros::Subscriber displayModeSub;
     ros::Subscriber cmd_sub;
+    ros::Subscriber local_pos_sub;
     // ros::Subscriber pod_servo;
 
 public:
@@ -63,7 +65,7 @@ public:
             nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal/gimbal_angle_cmd", 10);
         gimbal_speed_cmd_pub =
             nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal/gimbal_speed_cmd", 10);
-        ros::Subscriber local_pos_sub = nh_.subscribe(uav_name + "/dji_osdk_ros/local_position", 10, &FLIGHT_CONTROL::local_pos_callback, this);
+        local_pos_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/local_position", 10, &FLIGHT_CONTROL::local_pos_callback, this);
 
         ctrl_cmd_pub = nh_.advertise<sensor_msgs::Joy>(
             uav_name + "/dji_osdk_ros/flight_control_setpoint_generic", 10);
@@ -109,22 +111,32 @@ public:
     void vo_pos_callback(const dji_osdk_ros::VOPosition::ConstPtr& msg) {
         current_vo_pos = *msg;
         #ifndef UWB_INSTEAD_VO
+        #ifndef GPS_INSTEAD_UWB
         current_pos_raw.x = current_vo_pos.y;
         current_pos_raw.y = current_vo_pos.x;
+        #endif
         #endif
     }
 
     void local_pos_callback(const geometry_msgs::PointStamped::ConstPtr& msg){
+        // current_local_pos.x = msg->point.x;
         current_gps_pos = *msg;
+        
+        ROS_INFO("Current GPS pos_x: %.2lf, y: %.2lf, z: %.2lf", current_gps_pos.point.x, current_gps_pos.point.y, current_gps_pos.point.z);
+        ROS_INFO("->current local pos x: %.2lf", current_local_pos.x);
+
+        #ifdef GPS_INSTEAD_UWB
         current_pos_raw.x = current_gps_pos.point.x;
         current_pos_raw.y = current_gps_pos.point.y;
+        # endif
         // current_local_pos.x = msg->point.x;
         // current_local_pos.y = msg->point.y;
         // current_local_pos.z = msg->point.z;
-    // #ifdef GPS_HEIGHT
+    #ifdef GPS_HEIGHT
         // current_pos_raw.z = current_local_pos.z;
         current_pos_raw.z = current_gps_pos.point.z;
-    // #endif
+    #endif
+        
     }
 
     Point compensate_position_offset(Point _p){

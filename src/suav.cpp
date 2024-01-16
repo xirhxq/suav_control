@@ -160,13 +160,13 @@ public:
         //     ros::spinOnce();
         //     rate.sleep();
         // }
+        fc.set_local_position();
         if (!ON_GROUND) {
             if(fc.set_local_position()){
                 fc.obtain_control();
                 fc.monitoredTakeoff();
             }
         }
-
 
         ROS_INFO("Start Control State Machine...");
 
@@ -238,7 +238,7 @@ public:
         ROS_INFO("###----StepTakeoff----###");
         double expected_height = 6.0;
         ROS_INFO("Expected height @ %.2lf", expected_height);
-        // set_local_position();
+        
         fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
         status_encoder();
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_height, 0.2)){
@@ -250,7 +250,7 @@ public:
 
     void StepHold() {
         ROS_INFO("###----StepHold----###");
-        double hold_time = 20.0;
+        double hold_time = 60.0;
         // auto expected_point = fc.compensate_yaw_offset(MyDataFun::new_point(10.0, 8.0, 2.0), fc.yaw_offset);
         // auto expected_point = MyDataFun::new_point(0.0, 0.0, 20.0);
         auto expected_point = MyDataFun::new_point(searchPoints.pose[0], searchPoints.pose[1], searchPoints.pose[2]);
@@ -327,6 +327,8 @@ public:
             task_time = fc.get_time_now() - task_begin_time;
             ROS_INFO("-----------");
             ROS_INFO("Time: %lf", task_time);
+            ROS_INFO("Current GPS pos_x: %.2lf, y: %.2lf, z: %.2lf", fc.current_gps_pos.point.x, fc.current_gps_pos.point.y, fc.current_gps_pos.point.z);
+            // ROS_INFO("->current local pos x: %.2lf", fc.current_local_pos.x);
             ROS_INFO("M210(State: %d) @ %s", task_state, MyDataFun::output_str(fc.current_pos_raw).c_str());
             // ROS_INFO("Gimbal %s", MyDataFun::output_str(current_gimbal_angle).c_str());
             ROS_INFO("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg", fc.current_euler_angle.x * RAD2DEG_COE,
@@ -403,7 +405,6 @@ int main(int argc, char** argv) {
         ROS_WARN("IGNORING SEARCH!!!");
         ignoreSearch = true;
     }
-
 
     TASK t(uav_name, ON_GROUND, start_state, nh, ignoreSearch);
 
