@@ -25,7 +25,7 @@ private:
     size_t track_tra_cnt;
     Point desired_point;
 
-    double expected_height = 25;
+    double expected_height = 7.5;
 
     DataLogger dl;
     ros::Rate rate;
