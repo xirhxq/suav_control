@@ -9,6 +9,7 @@ using namespace dji_osdk_ros;
 using namespace std;
 
 struct WayPoint {
+
         int id;
         int log;
         bool status;
@@ -74,8 +75,6 @@ struct WayPoint {
         }
 
     };
-
-
 class TASK {
 
 private:
@@ -250,15 +249,15 @@ public:
 
     void StepHold() {
         ROS_INFO("###----StepHold----###");
-        double hold_time = 60.0;
+        double hold_time = 30.0;
         // auto expected_point = fc.compensate_yaw_offset(MyDataFun::new_point(10.0, 8.0, 2.0), fc.yaw_offset);
-        // auto expected_point = MyDataFun::new_point(0.0, 0.0, 20.0);
-        auto expected_point = MyDataFun::new_point(searchPoints.pose[0], searchPoints.pose[1], searchPoints.pose[2]);
+        auto expected_point = MyDataFun::new_point(0.0, 0.0, 20.0);
+        // auto expected_point = MyDataFun::new_point(searchPoints.pose[0], searchPoints.pose[1], searchPoints.pose[2]);
         ROS_INFO("Hold %.2lf", fc.get_time_now() - hold_begin_time);
         ROS_INFO("ExpectedPoint: %s", MyDataFun::output_str(expected_point).c_str());
         ROS_INFO("Search over: %s", searchOver?"YES":"NO");
-        // fc.M210_adjust_yaw(fc.yaw_offset);
-        fc.yaw_offset = searchPoints.pose[3];
+        fc.M210_adjust_yaw(fc.yaw_offset);
+        // fc.yaw_offset = searchPoints.pose[3];
         fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
         status_encoder();
         if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
