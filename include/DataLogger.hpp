@@ -146,7 +146,7 @@ public:
             file_.close();
         }
     }
-
+ 
     void initialize(const std::vector<std::pair<std::string, std::string>> &variableInfo) {
         if (!initialized_) {
             initialized_ = true;

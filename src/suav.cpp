@@ -39,6 +39,8 @@ private:
 
 public:
 
+    double hold_time_for_locateUSV;
+    
     TASK(string name, bool ON_GROUND, string start_state, ros::NodeHandle nh_, bool ignoreSearch): 
         fc(name, nh_), dl("search.csv"), rate(50){
         
@@ -87,10 +89,11 @@ public:
 
         printf("Waiting for command to take off...\n");
         sleep(3);
-        while(id == -1 && ros::ok()){
-             ros::spinOnce();
-             rate.sleep();
-        }
+        // while(id == -1 && ros::ok()){
+        //      ros::spinOnce();
+        //      rate.sleep();
+        // }
+        fc.set_local_position();
         if (!ON_GROUND) {
             fc.obtain_control();
             fc.monitoredTakeoff();
@@ -159,14 +162,13 @@ public:
 
     void StepHold() {
         printf("###----StepHold----###\n");
-        double hold_time = 20.0;
         auto expected_point = MyDataFun::new_point(0, 0, expected_height);
         printf("Hold %.2lf\n", fc.get_time_now() - hold_begin_time);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
         fc.M210_adjust_yaw(fc.yaw_offset);
         // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
-        if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
+        if (fc.enough_time_after(hold_begin_time, hold_time_for_locateUSV) && searchOver){
             toStepBack();
         }
     }
@@ -271,50 +273,18 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "suav", ros::init_options::AnonymousName);
     ros::NodeHandle nh;
 
-    if (argc <= 2) {
-        ROS_ERROR("Required more than 2 parameters, quitting...");
-        return 0;
-    }
+    std::string uav_name;
+    bool ON_GROUND = false;
+    bool ignoreSearch = true;
+    std::string start_state;
 
-    bool ON_GROUND = true;
-    if (argc > 2) {
-        auto on_ground = std::string(argv[2]);
-        if (on_ground == "false" || on_ground == "takeoff") {
-            ON_GROUND = false;
-            ROS_WARN("WILL TAKE OFF!!!!");
-        }
-        else {
-            ROS_WARN("ON GROUND TEST!!!");
-        }
-    }
-    
-	string uav_name = "none";
-	if (argc > 1) {
-		uav_name = std::string(argv[1]);
-	}
-    while (uav_name == "none"){
-        ROS_ERROR("Invalid vehicle name: %s", uav_name.c_str());
-    }
-	printf("Vehicle name: %s\n", uav_name.c_str());
-
-
-    std::string start_state = "";
-    if (argc > 3) {
-        // get the start state and set the task_state
-        start_state = std::string(argv[3]);
-    }
-
-    bool ignoreSearch = false;
-    printf("argc == %d, argv[4] == %s\n", argc, argv[4]);
-    if (argc > 4 && std::string(argv[4]) == "ignoreSearch") {
-        ROS_WARN("IGNORING SEARCH!!!");
-        ignoreSearch = true;
-    }
-
+    nh.getParam("uavName", uav_name);
+    nh.getParam("ON_GROUND", ON_GROUND);
+    nh.getParam("startState", start_state);
+    nh.getParam("ignoreSearch", ignoreSearch);
 
     TASK t(uav_name, ON_GROUND, start_state, nh, ignoreSearch);
-
-    
+    nh.getParam("hold_time_for_locateUSV", t.hold_time_for_locateUSV);
 
     t.spin();
     return 0;

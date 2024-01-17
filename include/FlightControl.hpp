@@ -8,7 +8,8 @@
 #define Z_KP KP
 #define YAW_KP 1.0 
 //#define UWB_INSTEAD_VO
-//#define GPS_HEIGHT
+#define GPS_HEIGHT
+#define GPS_INSTEAD_VO
 
 class FLIGHT_CONTROL {
 private:
@@ -27,6 +28,7 @@ private:
     ros::Subscriber flightStatusSub;
     ros::Subscriber displayModeSub;
     ros::Subscriber cmd_sub;
+    ros::Subscriber local_pos_sub;
 
 public:
 
@@ -56,7 +58,7 @@ public:
             nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal/gimbal_angle_cmd", 10);
         gimbal_speed_cmd_pub =
             nh_.advertise<geometry_msgs::Vector3>(uav_name + "/gimbal/gimbal_speed_cmd", 10);
-        ros::Subscriber local_pos_sub = nh_.subscribe(uav_name + "/dji_osdk_ros/local_position", 10, &FLIGHT_CONTROL::local_pos_callback, this);
+        local_pos_sub = fc_nh.subscribe(uav_name + "/dji_osdk_ros/local_position", 10, &FLIGHT_CONTROL::local_pos_callback, this);
 
         ctrl_cmd_pub = nh_.advertise<sensor_msgs::Joy>(
             uav_name + "/dji_osdk_ros/flight_control_setpoint_generic", 10);
@@ -100,19 +102,22 @@ public:
 
     void vo_pos_callback(const dji_osdk_ros::VOPosition::ConstPtr& msg) {
         current_vo_pos = *msg;
-        #ifndef UWB_INSTEAD_VO
+        #ifndef GPS_INSTEAD_VO
         current_pos_raw.x = current_vo_pos.y;
         current_pos_raw.y = current_vo_pos.x;
         #endif
     }
 
     void local_pos_callback(const geometry_msgs::PointStamped::ConstPtr& msg){
-        current_local_pos.x = msg->point.x;
-        current_local_pos.y = msg->point.y;
-        current_local_pos.z = msg->point.z;
-    #ifdef GPS_HEIGHT
+        MyDataFun::set_value(current_local_pos, msg->point);
+        #ifdef GPS_INSTEAD_VO
+        current_pos_raw.x = current_local_pos.x;
+        current_pos_raw.y = current_local_pos.y;
+        #endif
+        
+        #ifdef GPS_HEIGHT
         current_pos_raw.z = current_local_pos.z;
-    #endif
+        #endif
     }
 
     Point compensate_position_offset(Point _p){
@@ -143,7 +148,7 @@ public:
         #ifdef UWB_INSTEAD_VO
         current_pos_raw.x = current_range_pos.x;
         current_pos_raw.y = current_range_pos.y;
-	current_pos_raw.z = current_range_pos.z;
+	    current_pos_raw.z = current_range_pos.z;
         #endif
     }
 
