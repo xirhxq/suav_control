@@ -18,9 +18,7 @@ private:
     ControlState task_state;
     vector<geometry_msgs::Vector3> search_tra;
     size_t search_tra_cnt;
-    double hold_begin_time, ascend_begin_time;
     double task_begin_time, task_time;
-    double track_begin_time, track_time;
     std::vector<std::pair<double, Point>> tracking_tra;
     size_t track_tra_cnt;
     Point desired_point;
@@ -128,7 +126,6 @@ public:
     void toStepHold(){
         tic = fc.get_time_now();
         task_state = HOLD;
-        hold_begin_time = fc.get_time_now();
     }
 
     void toStepLand(){
@@ -161,12 +158,12 @@ public:
         printf("###----StepHold----###\n");
         double hold_time = 20.0;
         auto expected_point = MyDataFun::new_point(0, 0, expected_height);
-        printf("Hold %.2lf\n", fc.get_time_now() - hold_begin_time);
+        printf("Hold %.2lf\n", toc - tic);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
         fc.M210_adjust_yaw(fc.yaw_offset);
         // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
-        if (fc.enough_time_after(hold_begin_time, hold_time) && searchOver){
+        if (toc - tic >= 20.0 && searchOver){
             toStepBack();
         }
     }
@@ -175,7 +172,6 @@ public:
         printf("###----StepBack----###\n");
         double hold_time = 5.0;
         auto expected_point = MyDataFun::new_point(0, 0, 2.0);
-        printf("Back %.2lf\n", fc.get_time_now() - hold_begin_time);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
         // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
