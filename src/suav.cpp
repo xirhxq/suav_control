@@ -233,15 +233,16 @@ public:
             // std::cout << "\033c" << std::flush;
             toc = fc.get_time_now();
             task_time = fc.get_time_now() - task_begin_time;
-            printf("-----------\n");
-            printf("Time: %lf\n", task_time);
-            printf("M210(State: %d) @ %s\n", task_state, MyDataFun::output_str(fc.current_pos_raw).c_str());
+            ROS_INFO("-----------\n");
+            ROS_INFO("Flight duration: %lf\n", task_time);
+            ROS_INFO("M300(State: %d) @ %s\n", task_state, MyDataFun::output_str(fc.current_pos_raw).c_str());
             // printf("Gimbal %s\n", MyDataFun::output_str(current_gimbal_angle).c_str());
-            printf("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg\n", fc.current_euler_angle.x * RAD2DEG_COE,
-                                                        fc.current_euler_angle.y * RAD2DEG_COE,
-                                                        fc.current_euler_angle.z * RAD2DEG_COE);
-            printf("Search Over: %d\n", searchOver);                        
-            printf("State time: %.2lf\n", toc - tic);
+            ROS_INFO("Attitude (R%.2lf, P%.2lf, Y%.2lf) / deg\n", fc.current_euler_angle.x * RAD2DEG_COE,
+                                                                  fc.current_euler_angle.y * RAD2DEG_COE,
+                                                                  fc.current_euler_angle.z * RAD2DEG_COE);
+            ROS_INFO("Search Over: %d\n", searchOver);                        
+            ROS_INFO("State time: %.2lf\n", toc - tic);
+
             if (fc.EMERGENCY) {
                 fc.M210_hold_ctrl();
                 printf("!!!!!!!!!!!!EMERGENCY!!!!!!!!!!!!\n");
