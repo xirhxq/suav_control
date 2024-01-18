@@ -93,7 +93,8 @@ public:
         //      ros::spinOnce();
         //      rate.sleep();
         // }
-        fc.set_local_position();
+    
+        // fc.set_local_position();
         if (!ON_GROUND) {
             fc.obtain_control();
             fc.monitoredTakeoff();
@@ -175,14 +176,14 @@ public:
 
     void StepBack() {
         printf("###----StepBack----###\n");
-        double hold_time = 5.0;
+        // double hold_time = 5.0;
         auto expected_point = MyDataFun::new_point(0, 0, 2.0);
         printf("Back %.2lf\n", fc.get_time_now() - hold_begin_time);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
         // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
         fc.M210_position_yaw_rate_ctrl(0, 0, 2.0, 0);
-        if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.2)){
+        if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.3)){
               toStepLand();
         }
     }

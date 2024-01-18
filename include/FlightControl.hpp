@@ -8,8 +8,8 @@
 #define Z_KP KP
 #define YAW_KP 1.0 
 //#define UWB_INSTEAD_VO
-#define GPS_HEIGHT
-#define GPS_INSTEAD_VO
+// #define GPS_HEIGHT
+// #define GPS_INSTEAD_VO
 
 class FLIGHT_CONTROL {
 private:

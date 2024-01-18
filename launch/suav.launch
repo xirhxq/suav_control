@@ -6,7 +6,7 @@
     <param name="ON_GROUND" type="bool" value="false"/>
     <param name="startState" type="string" value="$(arg startState)"/>
     <param name="ignoreSearch" type="bool" value="true"/>
-    <param name="hold_time_for_locateUSV" type="double" value="10.0"/>
+    <param name="hold_time_for_locateUSV" type="double" value="20.0"/>
 
     <node pkg="suav_control" type="suav" name="suav" output="screen"></node>
 </launch>
