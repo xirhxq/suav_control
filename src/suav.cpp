@@ -25,7 +25,7 @@ private:
     size_t track_tra_cnt;
     Point desired_point;
 
-    double expected_height = 7.5;
+    double expected_height = 6.0;
     double tic, toc;
 
     DataLogger dl;
@@ -94,7 +94,9 @@ public:
         //      rate.sleep();
         // }
     
-        // fc.set_local_position();
+        #ifdef GPS_INSTEAD_VO
+        fc.set_local_position();
+        #endif
         if (!ON_GROUND) {
             fc.obtain_control();
             fc.monitoredTakeoff();
@@ -153,7 +155,7 @@ public:
     void StepTakeoff() {
         printf("###----StepTakeoff----###\n");
         printf("Expected height @ %.2lf\n", expected_height);
-        fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
+        fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0); // position control
         if (toc - tic >= 15.0){
             // printf("Arrive expected height @ %.2lf\n", expected_height);
             toStepHold();
@@ -164,11 +166,12 @@ public:
     void StepHold() {
         printf("###----StepHold----###\n");
         auto expected_point = MyDataFun::new_point(0, 0, expected_height);
+        auto expected_point_higher = MyDataFun::new_point(0, 0, 7.5);
         printf("Hold %.2lf\n", fc.get_time_now() - hold_begin_time);
-        printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
+        printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point_higher).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
-        fc.M210_adjust_yaw(fc.yaw_offset);
-        // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
+        // fc.M210_adjust_yaw(fc.yaw_offset); // velocity control
+        fc.UAV_Control_to_Point_with_yaw(expected_point_higher, fc.yaw_offset); // velocity control, yaw rate control 
         if (fc.enough_time_after(hold_begin_time, hold_time_for_locateUSV) && searchOver){
             toStepBack();
         }
@@ -182,8 +185,8 @@ public:
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
         // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
-        fc.M210_position_yaw_rate_ctrl(0, 0, 2.0, 0);
-        if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.3)){
+        fc.M210_position_yaw_rate_ctrl(0, 0, 2.0, 0); // position control
+        if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.2)){
               toStepLand();
         }
     }
