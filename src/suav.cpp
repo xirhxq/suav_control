@@ -146,7 +146,7 @@ public:
     void StepTakeoff() {
         printf("###----StepTakeoff----###\n");
         printf("Expected height @ %.2lf\n", expected_height);
-        fc.M210_position_yaw_rate_ctrl(0, 0, expected_height, 0);
+        fc.M210_position_yaw_ctrl(0, 0, expected_height, fc.yaw_offset);
         if (toc - tic >= 15.0){
             // printf("Arrive expected height @ %.2lf\n", expected_height);
             toStepHold();
@@ -161,7 +161,7 @@ public:
         printf("Hold %.2lf\n", toc - tic);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
-        fc.M210_adjust_yaw(fc.yaw_offset);
+        fc.M210_position_yaw_ctrl(0, 0, expected_height, fc.yaw_offset);
         // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
         if (toc - tic >= 20.0 && searchOver){
             toStepBack();
@@ -171,11 +171,11 @@ public:
     void StepBack() {
         printf("###----StepBack----###\n");
         double hold_time = 5.0;
-        auto expected_point = MyDataFun::new_point(0, 0, 2.0);
+        auto expected_point = MyDataFun::new_point(0, 0, 2.5);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
         // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
-        fc.M210_position_yaw_rate_ctrl(0, 0, 2.0, 0);
+        fc.M210_position_yaw_rate_ctrl(0, 0, 2.5, 0);
         if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.2)){
               toStepLand();
         }
