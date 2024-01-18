@@ -251,7 +251,6 @@ public:
             dl.log("state", task_state);
             dl.log("pos", fc.current_pos_raw);
             dl.log("eulerAngle", fc.current_euler_angle);
-            dl.log("trackTime", track_time);
             dl.log("desiredPoint", desired_point);
             dl.newline();
             
