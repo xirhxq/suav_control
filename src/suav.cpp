@@ -25,7 +25,7 @@ private:
     size_t track_tra_cnt;
     Point desired_point;
 
-    double expected_height = 6.0;
+    double expected_height = 7.5;
     double tic, toc;
 
     DataLogger dl;
@@ -170,8 +170,8 @@ public:
         printf("Hold %.2lf\n", fc.get_time_now() - hold_begin_time);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point_higher).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
-        // fc.M210_adjust_yaw(fc.yaw_offset); // velocity control
-        fc.UAV_Control_to_Point_with_yaw(expected_point_higher, fc.yaw_offset); // velocity control, yaw rate control 
+        fc.M210_adjust_yaw(fc.yaw_offset); // velocity control
+        // fc.UAV_Control_to_Point_with_yaw(expected_point_higher, fc.yaw_offset); // velocity control, yaw rate control 
         if (fc.enough_time_after(hold_begin_time, hold_time_for_locateUSV) && searchOver){
             toStepBack();
         }
