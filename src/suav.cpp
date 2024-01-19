@@ -78,7 +78,6 @@ public:
             {"state", "enum"},
             {"pos", "Point"},
             {"eulerAngle", "Point"},
-            {"trackTime", "double"},
             {"desiredPoint", "point"}
         };
         dl.initialize(vn);
