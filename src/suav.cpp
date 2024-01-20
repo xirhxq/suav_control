@@ -160,7 +160,7 @@ public:
         printf("Hold %.2lf\n", toc - tic);
         printf("ExpectedPoint: %s\n", MyDataFun::output_str(expected_point).c_str());
         printf("Search over: %s\n", searchOver?"YES":"NO");
-        fc.M210_adjust_yaw(fc.yaw_offset);
+        fc.M210_velocity_position_yaw_ctrl(0, 0, expected_height, fc.yaw_offset);
         // fc.M210_position_yaw_ctrl(0, 0, expected_height, fc.yaw_offset);
         // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
         if (toc - tic >= 20.0 && searchOver){

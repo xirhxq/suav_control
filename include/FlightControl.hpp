@@ -350,6 +350,20 @@ public:
         ctrl_cmd_pub.publish(controlCMD);
     }
 
+    void M210_velocity_position_yaw_ctrl(double _x, double _y, double _z, double _yaw) {
+        sensor_msgs::Joy controlCMD;
+        uint8_t flag =
+            (DJISDK::VERTICAL_POSITION | DJISDK::HORIZONTAL_VELOCITY |
+            DJISDK::YAW_ANGLE | DJISDK::HORIZONTAL_GROUND | DJISDK::STABLE_ENABLE);
+        controlCMD.axes.push_back(_x);
+        controlCMD.axes.push_back(_y);
+        controlCMD.axes.push_back(_z);
+        controlCMD.axes.push_back(_yaw);
+        controlCMD.axes.push_back(flag);
+
+        ctrl_cmd_pub.publish(controlCMD);
+    }
+
     void M210_position_yaw_rate_ctrl(double _x, double _y, double _z, double _yaw) {
         sensor_msgs::Joy controlCMD;
         uint8_t flag =
