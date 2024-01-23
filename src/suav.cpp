@@ -26,7 +26,6 @@ private:
     double expected_height = 7.5;
     double tic, toc;
 
-    DataLogger dl;
     ros::Rate rate;
 
     ros::Publisher uavReadyPub, uavStatePub;
@@ -38,7 +37,7 @@ private:
 public:
 
     TASK(string name, bool ON_GROUND, string start_state, ros::NodeHandle nh_, bool ignoreSearch): 
-        fc(name, nh_), dl("search.csv"), rate(50){
+        fc(name, nh_), rate(50){
         
         uavReadyPub = nh_.advertise<std_msgs::Empty>(name + "/uavReady", 10);
         searchOver = ignoreSearch;
@@ -72,15 +71,6 @@ public:
                 assert(0);
             }
         }
-    
-        std::vector<std::pair<std::string, std::string> > vn = {
-            {"taskTime", "double"},
-            {"state", "enum"},
-            {"pos", "Point"},
-            {"eulerAngle", "Point"},
-            {"desiredPoint", "point"}
-        };
-        dl.initialize(vn);
 
         printf("Waiting for command to take off...\n");
         sleep(3);
@@ -246,13 +236,6 @@ public:
                     break;
                 }
             }
-
-            dl.log("taskTime", task_time);
-            dl.log("state", task_state);
-            dl.log("pos", fc.current_pos_raw);
-            dl.log("eulerAngle", fc.current_euler_angle);
-            dl.log("desiredPoint", desired_point);
-            dl.newline();
             
             ros::spinOnce();
             rate.sleep();
