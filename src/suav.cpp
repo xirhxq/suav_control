@@ -166,7 +166,7 @@ public:
         printf("Search over: %s\n", searchOver?"YES":"NO");
         // fc.UAV_Control_to_Point_with_yaw(expected_point, fc.yaw_offset);
         fc.M210_position_yaw_rate_ctrl(0, 0, 2.5, 0);
-        if (MyMathFun::nearly_is(fc.current_pos_raw.z, expected_point.z, 0.2)){
+        if (toc - tic >= 20.0){
               toStepLand();
         }
     }
